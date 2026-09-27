@@ -1,6 +1,9 @@
 <!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Тренажер підготовки до НМТ</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head><body><div id="app">Завантаження…</div><script>
 var FIREBASE_CONFIG = {
 apiKey: "AIzaSyAynY9aCL3XZMsNlmzyXsn5k59bfqEYjvA",
@@ -218,42 +221,55 @@ function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,
 function todayStr(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0'); }
 
 function styleText(){
-return "body{margin:0;background:#F7F5F0;color:#20242A;font-family:Georgia,'Times New Roman',serif}"
-+".wrap{max-width:640px;margin:0 auto;padding:22px 16px 70px}"
-+"h1{font-size:1.35rem;margin:0 0 4px;font-weight:600}"
-+".intro{font-size:.85rem;color:#5b6068;margin:0 0 6px;line-height:1.5}"
-+".overall{margin:14px 0 26px}"
-+".sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 24px;padding:10px;background:#EFEDE5;border-radius:8px}"
-+".sync input{flex:1;min-width:120px;font-size:.85rem;padding:6px 8px;border:1px solid #d8d5cc;border-radius:6px}"
-+".sync button{font-size:.8rem;padding:6px 10px;border:none;border-radius:6px;background:#3B5BDB;color:#fff}"
-+".subject{margin-bottom:30px}"
-+".subject h2{font-size:1.08rem;margin:0 0 2px;padding-left:10px;border-left:4px solid var(--c)}"
-+".meta{font-size:.78rem;color:#6b7280;margin:0 0 8px;padding-left:14px}"
-+".bar{height:6px;background:#e7e4dc;border-radius:3px;overflow:hidden;margin:0 0 10px}"
-+".bar i{display:block;height:100%;background:var(--c)}"
-+".block-h{font-size:.72rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--c);margin:16px 0 4px;padding-left:2px}"
-+".row{padding:10px 2px;border-bottom:1px solid #eae7de;font-size:.92rem}"
-+".row-main{display:flex;align-items:flex-start;gap:8px}"
-+".row-main input[type=checkbox]{margin-top:4px;width:22px;height:22px;accent-color:var(--c);flex-shrink:0}"
-+".row-main .t{flex:1;line-height:1.45;padding-top:2px}"
-+".row .num{color:#9aa0a8;margin-right:4px}"
-+".row .t.done{color:#9aa0a8;text-decoration:line-through}"
+return ":root{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;--card:#F1EAD9;--card2:#FFFFFF}"
++"body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}"
++".wrap{max-width:660px;margin:0 auto;padding:28px 18px 80px}"
++"h1{font-family:'Fraunces',Georgia,serif;font-size:1.85rem;font-weight:600;letter-spacing:-.01em;margin:0 0 6px;line-height:1.15}"
++".intro{font-size:.86rem;color:var(--sub);margin:0 0 14px;line-height:1.6}"
++".legend{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:4px;font-size:.83rem;color:var(--sub)}"
++".legend li{display:flex;gap:8px;align-items:baseline}"
++".legend .ic{flex-shrink:0}"
++".rhythm{display:flex;gap:6px;margin:0 0 18px}"
++".rhythm .day{flex:1;text-align:center;padding:8px 2px 9px;border-radius:10px;background:var(--card2);border:1px solid var(--line)}"
++".rhythm .day span{display:block;font-size:.68rem;color:var(--sub);margin-bottom:6px}"
++".rhythm .dots{display:flex;justify-content:center;gap:3px}"
++".rhythm .dot{width:7px;height:7px;border-radius:50%;display:inline-block}"
++".overall{margin:0 0 22px;padding:16px 18px;background:var(--card2);border:1px solid var(--line);border-radius:14px}"
++".overall .meta{padding-left:0;margin:0 0 8px;font-size:.92rem;color:var(--ink);font-weight:500}"
++".sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 26px;padding:12px 14px;background:var(--card);border-radius:14px}"
++".sync input{flex:1;min-width:120px;font-size:.85rem;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card2);font-family:inherit}"
++".sync button{font-size:.8rem;padding:8px 12px;border:none;border-radius:8px;background:#3B5BDB;color:#fff;font-family:inherit;font-weight:500}"
++".subject{margin-bottom:34px;padding:18px;background:var(--card2);border:1px solid var(--line);border-radius:16px}"
++".subject h2{font-family:'Fraunces',Georgia,serif;font-size:1.2rem;font-weight:600;margin:0 0 3px;padding-left:12px;border-left:4px solid var(--c)}"
++".meta{font-size:.78rem;color:var(--sub);margin:0 0 10px;padding-left:16px}"
++".bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden;margin:0 0 10px}"
++".bar i{display:block;height:100%;background:var(--c);border-radius:4px}"
++".block-h{font-size:.78rem;font-weight:600;color:var(--c);margin:20px 0 6px;padding-left:2px;border-bottom:1px solid var(--line);padding-bottom:6px}"
++".row{padding:11px 2px;border-bottom:1px solid var(--line);font-size:.92rem}"
++".row:last-child{border-bottom:none}"
++".row-main{display:flex;align-items:flex-start;gap:9px}"
++".row-main input[type=checkbox]{margin-top:3px;width:20px;height:20px;accent-color:var(--c);flex-shrink:0;border-radius:5px}"
++".row-main .t{flex:1;line-height:1.5;padding-top:2px}"
++".row .num{color:var(--sub);margin-right:4px}"
++".row .t.done{color:var(--sub);text-decoration:line-through}"
 +".row-main .lnk{flex-shrink:0;text-decoration:none;font-size:1.1rem;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;opacity:.9}"
-+".row-main .lnk:active{background:#e7e4dc}"
++".row-main .lnk:active{background:var(--card)}"
 +".row-main .lnk-empty{width:32px;flex-shrink:0}"
-+".row-sub{display:flex;align-items:center;gap:10px;margin:6px 0 0;padding-left:30px}"
-+".row-sub .date{font-size:.78rem;color:#8a8f96;flex-shrink:0}"
-+".row-sub .n{flex:1;font-size:.85rem;color:#4b4f56;border:none;border-bottom:1px solid #d8d5cc;background:transparent;padding:5px 2px}"
-+".mock{margin:10px 0 16px;padding:10px;background:#EFEDE5;border-radius:8px}"
-+".mock h3{font-size:.82rem;margin:0 0 6px;font-weight:600}"
++".row-sub{display:flex;align-items:center;gap:10px;margin:6px 0 0;padding-left:29px}"
++".row-sub .date{font-size:.78rem;color:var(--sub);flex-shrink:0}"
++".row-sub .n{flex:1;font-size:.85rem;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;padding:5px 2px;font-family:inherit}"
++".row-sub .cnt{width:34px;flex-shrink:0;font-size:.85rem;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;padding:5px 2px;text-align:center;font-family:inherit}"
++".row-sub .cnt-label{font-size:.72rem;color:var(--sub);flex-shrink:0}"
++".mock{margin:14px 0 4px;padding:12px 14px;background:var(--card);border-radius:12px}"
++".mock h3{font-family:'Fraunces',Georgia,serif;font-size:.92rem;margin:0 0 8px;font-weight:600}"
 +".mock form{display:flex;gap:8px;margin-bottom:8px}"
-+".mock input[type=number]{width:70px;font-size:.9rem;padding:7px 8px;border:1px solid #d8d5cc;border-radius:6px}"
-+".mock button{font-size:.85rem;padding:7px 14px;border:none;border-radius:6px;background:var(--c);color:#fff}"
-+".mock .hist{font-size:.78rem;color:#6b7280;display:flex;flex-wrap:wrap;gap:8px}"
-+".mock .chip{background:#fff;border-radius:10px;padding:5px 6px 5px 10px;border:1px solid #e2dfd6;display:inline-flex;align-items:center;gap:6px}"
-+".chip-x{border:none;background:transparent;color:#b3b8bf;padding:2px 4px;font-size:.85rem;cursor:pointer;line-height:1}"
++".mock input[type=number]{width:70px;font-size:.9rem;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit}"
++".mock button{font-size:.85rem;padding:7px 14px;border:none;border-radius:8px;background:var(--c);color:#fff;font-family:inherit;font-weight:500}"
++".mock .hist{font-size:.78rem;color:var(--sub);display:flex;flex-wrap:wrap;gap:8px}"
++".mock .chip{background:var(--card2);border-radius:10px;padding:5px 6px 5px 10px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px}"
++".chip-x{border:none;background:transparent;color:var(--sub);padding:2px 4px;font-size:.85rem;cursor:pointer;line-height:1}"
 +".chip-x:active{color:#c0392b}"
-+"@media(prefers-color-scheme:dark){body{background:#1b1d21;color:#e7e5df}.bar{background:#33363c}.row{border-color:#33363c}.row .n{border-color:#44474d;color:#c9c7c0}.intro,.meta{color:#9a9da3}.mock{background:#26282c}.mock .chip{background:#1b1d21;border-color:#3a3d43}.sync{background:#26282c}.sync input{background:#1b1d21;border-color:#44474d;color:#e7e5df}}";
++"@media(prefers-color-scheme:dark){:root{--bg:#1B1915;--ink:#EDE7DA;--sub:#9C9284;--line:#38342C;--card:#25221D;--card2:#211E19}}";
 }
 
 function syncBarHTML(){
@@ -278,7 +294,8 @@ list.forEach(function(_,i){ if(st[i]&&st[i].done) done++; });
 overallDone+=done; overallTotal+=list.length;
 var pct=Math.round(done/list.length*100);
 subjHtml+='<div class="subject" style="--c:'+m.color+'">';
-subjHtml+='<h2>'+m.name+'</h2>';
+var SUBJ_ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'🇬🇧'};
+subjHtml+='<h2>'+SUBJ_ICON[subj]+' '+m.name+'</h2>';
 subjHtml+='<p class="meta">'+done+'/'+list.length+' · ≈'+m.time+'</p>';
 subjHtml+='<div class="bar"><i style="width:'+pct+'%"></i></div>';
 var mocks=STATE.mockLog[subj]||[];
@@ -320,6 +337,8 @@ subjHtml+='<div class="row">'
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
++'<span class="cnt-label">завдань:</span>'
++'<input class="cnt" type="number" min="0" max="999" value="'+esc(d.count||'')+'" onchange="countChange(\''+subj+'\','+i+',this.value)">'
 +'</div>'
 +'</div>';
 });
@@ -328,7 +347,21 @@ subjHtml+='</div>';
 });
 var overallPct=Math.round(overallDone/overallTotal*100);
 var html='<div class="wrap"><h1>Тренажер підготовки до НМТ</h1>'
-+'<p class="intro">Ритм: Пн/Ср/Пт — математика · Вт/Чт/Сб — українська · Пт — історія · Сб — англійська · Нд — повторення. Теми згруповані за розділами: 📖 — стаття з теорією (для англійської — граматичні таблиці або тематична лексика з osvita.ua), ▶️ — відеоурок (пряме посилання, або пошук на YouTube саме за назвою теми, якщо окремої перевіреної статті немає), 🔢 — тестування-пробник НМТ з osvita.ua (для англійської немає розбивки завдань за вузькими темами, тож посилання на пробні тести винесено одне на весь розділ, під прогрес-баром). Онови позначки після кожного заняття.</p>'
++'<p class="intro">Онови позначки після кожного заняття.</p>'
++'<div class="rhythm">'
++'<div class="day" title="Математика"><span>Пн</span><div class="dots"><i class="dot" style="background:'+META.math.color+'"></i></div></div>'
++'<div class="day" title="Українська мова"><span>Вт</span><div class="dots"><i class="dot" style="background:'+META.ukr.color+'"></i></div></div>'
++'<div class="day" title="Математика"><span>Ср</span><div class="dots"><i class="dot" style="background:'+META.math.color+'"></i></div></div>'
++'<div class="day" title="Українська мова"><span>Чт</span><div class="dots"><i class="dot" style="background:'+META.ukr.color+'"></i></div></div>'
++'<div class="day" title="Математика, Історія України"><span>Пт</span><div class="dots"><i class="dot" style="background:'+META.math.color+'"></i><i class="dot" style="background:'+META.hist.color+'"></i></div></div>'
++'<div class="day" title="Українська мова, Англійська мова"><span>Сб</span><div class="dots"><i class="dot" style="background:'+META.ukr.color+'"></i><i class="dot" style="background:'+META.eng.color+'"></i></div></div>'
++'<div class="day" title="Повторення"><span>Нд</span><div class="dots"><i class="dot" style="background:'+'#9a9da3'+'"></i></div></div>'
++'</div>'
++'<ul class="legend">'
++'<li><span class="ic">📖</span> стаття з теорією (для англійської — граматика чи лексика з osvita.ua)</li>'
++'<li><span class="ic">▶️</span> відеоурок (пряме посилання або пошук на YouTube за назвою теми)</li>'
++'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua</li>'
++'</ul>'
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div></div>'
 +syncBarHTML()
 +subjHtml+'</div>';
@@ -348,6 +381,13 @@ function noteChange(subj,i,val){
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][i]||{};
 cur.note=val;
+STATE[subj][i]=cur;
+persist();
+}
+function countChange(subj,i,val){
+STATE[subj]=STATE[subj]||{};
+var cur=STATE[subj][i]||{};
+cur.count=val;
 STATE[subj][i]=cur;
 persist();
 }
