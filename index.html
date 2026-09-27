@@ -1,0 +1,412 @@
+<!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Тренажер підготовки до НМТ</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head><body><div id="app">Завантаження…</div><script id="logic" type="text/plain">
+var FIREBASE_CONFIG = {
+apiKey: "ВСТАВ_СЮДИ",
+authDomain: "ВСТАВ_СЮДИ",
+projectId: "ВСТАВ_СЮДИ",
+storageBucket: "ВСТАВ_СЮДИ",
+messagingSenderId: "ВСТАВ_СЮДИ",
+appId: "ВСТАВ_СЮДИ"
+};
+var db=null;
+function initFirebase(){
+if(FIREBASE_CONFIG.apiKey==="ВСТАВ_СЮДИ") return;
+try{
+if(window.firebase && !firebase.apps.length){ firebase.initializeApp(FIREBASE_CONFIG); }
+db=firebase.firestore();
+}catch(e){ db=null; }
+}
+function getSyncCode(){ try{ return localStorage.getItem('nmt-sync-code')||''; }catch(e){ return ''; } }
+function setSyncCodeLS(code){ try{ localStorage.setItem('nmt-sync-code', code); }catch(e){} }
+function cloudSave(){
+if(!db) return;
+var code=getSyncCode();
+if(!code) return;
+db.collection('nmt-tracker').doc(code).set(STATE).catch(function(){});
+}
+function cloudLoad(code,cb){
+if(!db){ cb(null); return; }
+db.collection('nmt-tracker').doc(code).get().then(function(snap){
+cb(snap.exists?snap.data():null);
+}).catch(function(){ cb(null); });
+}
+function applySyncCode(){
+var inp=document.getElementById('syncCodeInput');
+var code=(inp.value||'').trim();
+var st=document.getElementById('syncStatusMsg');
+if(!code) return;
+setSyncCodeLS(code);
+if(!db){ if(st) st.textContent='Хмара не налаштована у файлі (див. FIREBASE_CONFIG).'; return; }
+if(st) st.textContent='Завантаження…';
+cloudLoad(code,function(remote){
+if(remote){
+STATE=remote;
+ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
+STATE.mockLog=STATE.mockLog||{};
+ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
+render();
+persist();
+if(st) st.textContent='Синхронізовано ✓';
+} else {
+cloudSave();
+render();
+if(st) st.textContent='Новий код створено, дані збережено ✓';
+}
+});
+}
+function genSyncCode(){
+var inp=document.getElementById('syncCodeInput');
+var c=Math.random().toString(36).slice(2,8).toUpperCase();
+if(inp) inp.value=c;
+applySyncCode();
+}
+
+var TOPICS = {
+math: ["Натуральні числа. Текстові задачі","Основні геометричні поняття: прямі, промені, відрізки","Подільність. НСД та НСК","Звичайні дроби. Задачі на дроби","Кути. Суміжні та вертикальні кути","Десяткові числа","Задачі на пропорції та відсотки","Паралельні та перпендикулярні прямі","Задачі на рух і роботу","Модуль числа. Дії з раціональними числами","Фінальний практикум (геометрія, ур. 1–3)","Множини чисел","Фінальний практикум (алгебра, ур. 1–8)","Трикутники. Основні поняття, лінії","Вирази зі степенем","Стандартний вигляд числа. Одночлени","Прямокутний трикутник","Многочлени. Розкриття дужок","Формули скороченого множення","Рівнобедрений та рівносторонній трикутник","Раціональні дроби: додавання/віднімання","Раціональні дроби: множення/ділення, степінь","Рівність і подібність трикутників. Теорема Фалеса","Арифметичний квадратний корінь. Властивості","Квадратний корінь. Тотожні перетворення","Розв'язування довільних трикутників","Корінь n-го степеня","Логарифмічні вирази","Площа трикутників","Тригонометричні вирази. Властивості","Формули зведення","Вписане та описане кола трикутника","Тригонометрія: основні співвідношення, подвійний аргумент","Формули додавання","Фінальний практикум (геометрія, ур. 5–11)","Фінальний практикум (алгебра, ур. 10–23)","Лінійні рівняння","Вписані та описані чотирикутники","Квадратні рівняння. Дискримінант","Теорема Вієта. Квадратний тричлен","Паралелограм","Дробово-раціональні рівняння","Рівняння з модулем. Ірраціональні рівняння","Прямокутник. Квадрат","Показникові рівняння","Логарифмічні рівняння","Ромб","Тригонометричні рівняння","Графічний метод. Системи рівнянь графічно","Трапеція","Системи рівнянь: підстановка, додавання","Фінальний практикум (алгебра, ур. 25–34)","Фінальний практикум (геометрія, ур. 13–17)","Лінійні та подвійні нерівності","Квадратні нерівності","Многокутники","Модульні нерівності. Метод інтервалів","Дробово-раціональні нерівності","Коло, круг. Кути у колі","Показникові нерівності","Логарифмічні нерівності","Довжина кола/дуги. Площа круга","Графічний спосіб розв'язування нерівностей","Системи нерівностей","Фінальний практикум (геометрія, ур. 19–21)","Фінальний практикум (алгебра, ур. 36–43)","Функції: область визначення/значень, нулі, монотонність","Прямі та площини у просторі","Функції: парність, екстремуми, періодичність","Графіки функцій: лінійна, обернена пропорційність, квадратична, степенева","Многогранники. Призма, паралелепіпед, куб","Графіки: показникова, логарифмічна, тригонометричні","Перетворення графіків функцій","Піраміда","Фінальний практикум (ур. 45–49)","Похідна. Таблиця і правила обчислення","Циліндр","Похідна: фізичний/геометричний зміст, рівняння дотичної","Дослідження функції похідною","Конус","Первісна. Невизначений інтеграл","Визначений інтеграл. Площа криволінійної трапеції","Куля. Сфера","Фінальний практикум (ур. 51–55)","Комбінаторика: суми, добутку, перестановки, розміщення","Комбінації тіл","Випадкові події. Ймовірність","Статистика: середнє, медіана, мода, розмах","Фінальний практикум (геометрія, ур. 23–29)","Арифметична прогресія","Геометрична прогресія","Координати: середина, довжина відрізка, рівняння прямої/кола","Фінальний практикум (ур. 57–61)","Повторення (алгебра, ур. 1–8)","Вектори. Дії з векторами","Повторення (алгебра, ур. 10–19)","Повторення (алгебра, ур. 20–23)","Система координат у просторі. Рівняння сфери","Повторення (алгебра, ур. 25–29)","Повторення (алгебра, ур. 30–34)","Вектори у просторі","Повторення (алгебра, ур. 36–39)","Повторення (алгебра, ур. 40–43)","Фінальний практикум (геометрія, ур. 31–34)","Повторення (алгебра, ур. 45–49)","Повторення (алгебра, ур. 51–55)","Повторення (геометрія, ур. 1–11)","Повторення (алгебра, ур. 57–61)","Параметри: лінійні/квадратні рівняння","Повторення (геометрія, ур. 13–21)","Параметри: показникові/логарифмічні рівняння","Параметри: дробово-раціональні/ірраціональні","Повторення (геометрія, ур. 23–29)","Параметри: комбіновані завдання","Параметри: системи рівнянь","Повторення (геометрія, ур. 31–34)","Фінальний практикум (ур. 73–77)"],
+ukr: ["Звуки мови. Позначення на письмі","Наголос. Акцентуаційні норми","Складоподіл, наголос, перенос слів","Чергування голосних","Чергування приголосних","Зміни приголосних. Суфікси -цьк-, -ськ-, -зьк- та ін.","Спрощення в групах приголосних","М'який знак","Апостроф","Подвоєння та подовження букв","Слова іншомовного походження","Велика буква та лапки","Правопис префіксів","Правопис суфіксів","Правопис складних слів","Частка НЕ","Ненаголошені голосні е, и, о в коренях","Синоніми, антоніми, омоніми, пароніми","Суто українська та запозичена лексика","Фразеологія","Будова слова та словотвір","Розбір за будовою слова","Частини мови. Класифікація","Іменник. Рід іменників","Число іменників","Відміни іменників","Закінчення родового відмінка","Кличний відмінок","Прикметник: якісні, відносні, присвійні","Ступені порівняння прикметників","Правопис прикметників","Числівник: види за значенням і будовою","Відмінювання числівників","Узгодження числівників з іменниками","Займенник. Розряди","Відмінювання та правопис займенників","Дієслово. Дієвідміни","Способи дієслів","Дієприкметник","Дієприслівник","Прислівник. Розряди, ступені порівняння","Правопис прислівників","Прийменник","Сполучник","Частка та вигук","Аналіз помилок: морфологія","Узагальнення: визначення частин мови","Словосполучення","Просте речення. Підмет і присудок","Узгодження підмета з присудком","Другорядні члени речення","Порівняльний зворот","Односкладні речення","Однорідні члени речення","Узагальнювальні слова","Звертання. Кличний відмінок у реченні","Вставні слова та конструкції","Відокремлені означення","Відокремлені прикладки","Відокремлені обставини","Відокремлені додатки","Уточнювальні члени речення","Складносурядне речення (ССР)","Пунктуація в ССР","Складнопідрядне речення (СПР)","Типи СПР","СПР обставинні (продовження)","СПР з кількома підрядними","Безсполучникове складне речення (БСР)","Пунктуація в БСР","Складне речення з різними видами зв'язку","Пряма й непряма мова","Цитати та діалог","Заміна прямої мови на непряму","Текст та його ознаки","Аналіз тексту","Стилі мовлення","Синтаксична синонімія","Логічні й граматичні помилки в синтаксисі","Аналіз складних завдань (синтаксис)","Узагальнення розділу «Синтаксис»","Повторення: фонетика, орфоепія, графіка","Повторення: орфографія (основи)","НМТ-тест №1 + аналіз","Повторення: складні випадки орфографії","Повторення: лексикологія, фразеологія","НМТ-тест №2 + аналіз","Повторення: морфологія (іменник/прикметник/числівник)","Повторення: морфологія (дієслово/дієприслівник/прислівник)","НМТ-тест №3 + аналіз","Повторення: службові частини мови","Тренінг «Відповідності» (4×4)","НМТ-тест №4 + аналіз","Повторення: синтаксис простого речення","Тренінг «Робота з текстом»","НМТ-тест №5 + аналіз","Повторення: пунктуація у складному реченні","Тренажер з наголосів","Симуляція НМТ №1 (на час)","Точкова робота над помилками (квітень)","Шпори-повторялки","Симуляція НМТ №2 (на час)","Фінальний перегляд лексики","Особливі випадки пунктуації","Симуляція НМТ №3 (на час)","Експрес-огляд винятків","Психологічна та технічна готовність","Лайтовий генеральний тест"],
+hist: ["Кам'яний вік, трипільська культура","Бронзовий–ранній залізний вік","Русь-Україна: становлення держави","Русь-Україна: розквіт і роздробленість","Королівство Руське. Монгольська навала","Руські князівства в іноземних державах. Кримське ханство","Українські землі у Речі Посполитій (2 пол. XVI ст.)","Українські землі у Речі Посполитій (1 пол. XVII ст.)","Національно-визвольна війна сер. XVII ст.","Руїна (кінець 50–80-х рр. XVII ст.)","Руїна (продовження)","Українські землі кінець XVII – 1 пол. XVIII ст.","Українські землі в 2 пол. XVIII ст.","Землі у складі Рос. імперії (кінець XVIII – 1 пол. XIX)","Землі у складі Австрійської імперії (кінець XVIII – 1 пол. XIX)","Культура України ХІХ ст.","Землі у складі Рос. імперії (2 пол. XIX ст.)","Землі у складі Австро-Угорщини (2 пол. XIX ст.)","Землі у складі Рос. імперії (1900–1914)","Землі у складі Австро-Угорщини (1900–1914)","Україна в роки Першої світової війни","Початок Української революції","Боротьба за відновлення державності","Українська революція (продовження)","Комуністичний тоталітарний режим в Україні","Утвердження більшовицького режиму","Західноукраїнські землі у міжвоєнний період","Україна в роки Другої світової війни","Друга світова війна (продовження)","Україна в перші повоєнні роки","Україна в умовах десталінізації","Криза радянської системи","Відновлення незалежності України","Становлення незалежної держави","Персоналії та пам'ятки (візуальне розпізнавання)","Підсумкове повторення: хронологія, картосхеми, НМТ"],
+eng: ["Verb: часи та базові форми (ч.1)","People & Relationships","Personality","Verb: неособові форми, стан (ч.2)","Noun","Home","Lifestyle","Adjective","Adverb","Clothes & Fashion","Shopping","Modality","Pronoun","Food & Drinks","Health & Body","Number","Preposition","Education","Holidays","Determiners","Work & Business","Leisure & Hobbies","Clause","Travelling","Society","Linking Words","Capital Letter usage","Expressing Opinion"]
+};
+var META = {
+math: {name:"Математика", color:"#3B5BDB", time:"60–90 хв/тема"},
+ukr: {name:"Українська мова", color:"#2F9E44", time:"40–60 хв/тема"},
+hist: {name:"Історія України", color:"#C2410C", time:"45–60 хв/тема"},
+eng: {name:"Англійська мова", color:"#0F766E", time:"45–60 хв/тема"}
+};
+var ORDER = ["math","ukr","hist","eng"];
+var STATE = {};
+var artifactCap = null;
+
+var BASEM="https://waytomathematics.blogspot.com/";
+var BASEU="https://zno.osvita.ua/ukrmova/";
+var BASEH="https://zno.osvita.ua/ukraine-history/";
+
+var M={1:"2018/05/dijsni-chisla.html",2:"2026/07/fractions.html",3:"2026/07/irrational-numbers.html",4:"2018/06/modul-dijsnogo-chisla.html",5:"2018/06/vidsotky.html",6:"2018/06/dii-z-drobamy-ta-mnogochlenamy.html",7:"2026/07/operations-with-fractions.html",9:"2018/09/logarifmichni-vyrazy.html",10:"2018/09/trygonometrychni-vyrazy.html",11:"2018/10/linijnikvadratnidrobovi-rivnjannja.html",12:"2026/07/quadratic-equations.html",13:"2026/07/rational-equations.html",14:"2018/10/irrazionalni-rivnjannja.html",15:"2018/10/trygonometrychni-rivnjannja.html",16:"2018/10/pokaznykovi-rivnjannja.html",17:"2018/10/logaryphmichni-rivnjannja.html",18:"2018/10/linijnikvadratnidrobovi-nerivnosti.html",19:"2026/07/quadratic-inequalities.html",20:"2026/07/rational-inequalities.html",21:"2018/10/pokaznykovi-nerivnosti.html",22:"2018/10/logaryphmichni-nerivnosti.html",23:"2018/11/systemy-rivnjan.html",24:"2018/04/tekstovi-zadachi.html",25:"2026/07/problems-motion-work-mixtures.html",26:"2018/11/rivnjannja-z-parametrom.html",27:"2026/07/systems-with-parameter.html",29:"2026/07/finding-parameter.html",31:"2018/11/progresija.html",32:"2021/05/geometrychna-progresija.html",33:"2018/11/function.html",34:"2018/11/grafik-function.html",35:"2018/11/function-za-grafikamy.html",36:"2026/07/function-graph-analysis.html",37:"2018/12/pokhidna-function.html",38:"2018/12/pervisna.html",39:"2026/08/definite-integral-area.html",40:"2018/12/doslidgennja-function-ostannja-chastyna.html",41:"2018/05/kombinatoryka.html",42:"2018/12/teorija-jmovirnostej.html",43:"2018/12/statistika.html",44:"2019/01/kuty-na-ploshini.html",45:"2019/01/trykutnyky.html",46:"2026/08/triangles-side-lengths.html",47:"2019/02/chotyrykutnyky.html",48:"2021/06/pryamokutnik.html",49:"2021/06/romb.html",51:"2021/06/trapezcija.html",52:"2019/02/kolo-ta-krug.html",53:"2026/08/triangle-area-and-applications.html",54:"2019/02/koordynaty-na-ploshini.html",55:"2019/02/vektory-na-ploshini.html",56:"2019/02/prjami-ta-ploshiny-u-prostori.html",57:"2019/02/mnogogrannyky.html",58:"2021/06/piramida.html",59:"2019/02/tila-obertannja.html",60:"2019/03/kombinazii-til.html",61:"2019/03/koordynaty-u-prostori.html",62:"2019/03/vektory-u-prostori.html",63:"2024/12/7-algebra-abbreviated-multiplication.html"};
+
+var U={1:"tag-spivvidnoshennya_zvukiv_i_bukv/",2:"tag-sklad_nagolos_1/",4:"tag-zmini_prigolosnih_pri_tvorenni_sliv_1/",5:"tag-sproshennya_v_grupah_prigolosnih/",6:"tag-myakij_znak/",7:"tag-apostrof_1/",8:"tag-podvoyennya_liter_1/",9:"tag-pravopis_sliv_inshomovnogo_pohodzhennya/",10:"tag-velika_bukva_ta_lapki_u_vlasnih_nazvah/",11:"tag-pravopis_prefiksiv/",12:"tag-skladni_slova_1/",13:"tag-pravopis_ne_z_riznimi_chastinami_movi_1/",14:"tag-pravopis_liter_sho_poznachayut_nenagolosheni_golosni_e_i_o/",15:"tag-sinonimi/",16:"tag-leksichne_znachennya_slova/",17:"tag-frazeologiya/",18:"tag-budova_slova_slovotvir_2/",19:"tag-klasifikaciya_chastin_movi_1/",20:"tag-imennik_rid_i_chislo_imennikiv/",21:"tag-imennik_vidminyuvannya_imennikiv/",22:"tag-prikmetnik_1/",23:"tag-chislivnik_1/",24:"tag-zajmennik_1/",25:"tag-diyeslovo_1/",26:"tag-diyeprikmetnik_1/",27:"tag-diyeprislivnik_1/",28:"tag-prislivnik_1/",29:"tag-prijmennik_1/",30:"tag-spoluchnik_1/",31:"tag-chastka_1/",32:"tag-slovospoluchennya_1/",33:"tag-golovni_chleni_rechennya_1/",34:"tag-drugoryadni_chleni_rechennya_1/",35:"tag-odnoskladni_rechennya_1/",36:"tag-uskladnene_rechennya_odnoridni_chleni_rechennya/",37:"tag-uskladnene_rechennya_zvertannya_vstavni_slovahennya/",38:"tag-vidokremleni_chleni_rechennya_vidokremlene_oznachennya/",39:"tag-vidokremleni_chleni_rechennya_vidokremlena_obstavina/",40:"tag-vidokremleni_chleni_rechennya_vidokremlenij_dodatok/",41:"tag-skladne_rechennya_skladnosuryadne_rechennya/",42:"tag-skladne_rechennya_skladnopidryadne_rechennya/",43:"tag-skladne_rechennya_skladne_bezspoluchnikove_rechennya/",44:"tag-skladne_rechennya_skladne_rechennya_z_riznimi_yazku/",45:"tag-chuzhe_movlennya_1/",46:"tag-zasobi_mizhfrazovoyi_yednosti/"};
+
+var H={1:"tag-starodavnya_istoriya_ukrayini/",2:"tag-vynyknennja_kyyivskoyi_derzhavy/",3:"tag-rozkvit_kyyivskoyi_derzhavy/",4:"tag-korolivstvo_ruske_mongolska_navala/",5:"tag-knyazivstva_u_skladi_inozemnih_derzhav_krimske_hanstvo/",6:"tag-ukrayinski_zemli_v_rechi_pospolytij_drughoyi_polovyny_khvi_st/",7:"tag-u_skladi_rechi_pospolitoyi_v_xvii_st/",8:"tag-vizvolna_vijna_ukrayinskogo_narodu_xvii_st/",9:"tag-kozacka_ukrayina_kincja_50kh_80kh_rr_khvii_st/",10:"tag-ukrayinski_zemli_kincja_khvii_pershoyi_polovyny_khviii_st/",11:"tag-ukrayinski_zemli_drughoyi_polovyny_khviii_st/",12:"tag-ukrayinski_zemli_v_rosijskij_imperiyi_kincja_khviii_pershoyi_polovyny_khikh_st/",13:"tag-ukrayinski_zemli_v_avstrijskij_imperiyi_kincja_khviii_pershoyi_polovyny_khikh_st/",14:"tag-kultura_ukrayini_xviii_xix_st/",15:"tag-ukrayinski_zemli_v_rosijskij_imperiyi_drughoyi_polovyny_khikh_st/",16:"tag-ukrayinski_zemli_v_avstroughorshhyni_drughoyi_polovyny_khikh_st/",17:"tag-ukrayinski_zemli_v_rosijskij_imperiyi_19001914_rr/",18:"tag-ukrayinski_zemli_v_avstroughorshhyni_19001914_rr/",19:"tag-ukrayina_v_roki_pershoyi_svitovoyi_vijni/",20:"tag-pochatok_ukrayinskoyi_revolyuciyi/",21:"tag-dyrektorija_unr/",22:"tag-vstanovlennja_komunistychnogho_rezhymu_v_ukrayini/",23:"tag-utverdzhennja_bilshovyckogho_rezhymu_v_ukrayini/",24:"tag-zahidnoukrayinski_zemli_v_mizhvoyennij_period/",25:"tag-pochatok_drughoyi_svitovoyi_vijny_1939_1941/",26:"tag-voyenni_diyi_na_terenakh_ukrayiny_1943_1945/",27:"tag-ukrayina_v_pershi_povoyenni_roki/",28:"tag-ukrayina_v_umovah_destalinizaciyi/",29:"tag-ukrayina_v_period_zagostrennya_krizi_radyanskoyi_sistemi/",30:"tag-vidnovlennya_nezalezhnosti_ukrayini/",31:"tag-stanovlennya_ukrayini_yak_nezalezhnoyi_derzhavi/",32:"tag-ghromadskopolitychni_ta_vijskovi_dijachi/"};
+
+var FULL={mPR:"https://zno.osvita.ua/mathematics/tema.html",uPR:"https://zno.osvita.ua/ukrmova/tema.html",hPR:"https://zno.osvita.ua/ukraine-history/tema.html",e1:"https://znogrant.com.ua/blog/gramatyka-anglijskoyi-movy-dlya-nmt-tablytsi-vsih-chasiv-z-prykladamy/",e2:"https://speakwell.ua/blog/gramatika-dlya-nmt-z-angliyskoyi-movi/",e3:"https://ispyt.com.ua/nmt/english",ePR:"https://justschool.me/en/nmt-english-tests",eVOC:"https://osvita.ua/test/training/english/55356/",eESSAY:"https://osvita.ua/test/training/english/55350/",eT1:"https://zno.osvita.ua/english/850/",eT2:"https://zno.osvita.ua/english/851/"};
+// Fallback: пряме посилання на теоретичну статтю/тег не завжди існує для кожної вузької теми,
+// тож для тих тем, де немає перевіреної прямої сторінки, формуємо пошук відеоуроку на YouTube
+// саме за назвою теми — це завжди робоче й релевантне посилання (значок ▶️).
+function ytSearch(title,ctx){
+return "https://www.youtube.com/results?search_query="+encodeURIComponent(title+" "+ctx+" НМТ теорія урок");
+}
+
+function linkURL(code){
+if(!code) return null;
+if(FULL[code]) return FULL[code];
+var p=code.charAt(0), n=code.slice(1);
+if(p==='m'&&M[n]) return BASEM+M[n];
+if(p==='u'&&U[n]) return BASEU+U[n];
+if(p==='h'&&H[n]) return BASEH+H[n];
+return null;
+}
+
+var LINKS = {
+math:["m24","m44","mPR","m7","m44","mPR","m5","m44","m25","m4","mPR","m1","mPR","m45","mPR","m6","m45","m6","m63","m45","m7","m7","m45","m3","m3","m46","m3","m9","m53","m10","m10","m52","m10","m10","mPR","mPR","m11","m47","m12","m12","m47","m13","m14","m48","m16","m17","m49","m15","m23","m51","m23","mPR","mPR","m18","m19","m47","m20","m20","m52","m21","m22","m52","m23","m23","mPR","mPR","m33","m56","m35","m34","m57","m34","m36","m58","mPR","m37","m59","m37","m40","m59","m38","m39","m59","mPR","m41","m60","m42","m43","mPR","m31","m32","m54","mPR","mPR","m55","mPR","mPR","m61","mPR","mPR","m62","mPR","mPR","mPR","mPR","mPR","mPR","mPR","m26","mPR","m26","m26","mPR","m29","m27","mPR","mPR"],
+ukr:["u1","u2","u2","uPR","u4","u4","u5","u6","u7","u8","u9","u10","u11","u11","u12","u13","u14","u15","u16","u17","u18","u18","u19","u20","u20","u21","u21","u21","u22","u22","u22","u23","u23","u23","u24","u24","u25","u25","u26","u27","u28","u28","u29","u30","u31","u19","u19","u32","u33","u33","u34","u34","u35","u36","u36","u37","u37","u38","u38","u39","u40","u39","u41","u41","u42","u42","u42","u42","u43","u43","u44","u45","u45","u45","u46","u46","uPR","u32","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","u2","uPR","uPR","uPR","uPR","u16","uPR","uPR","uPR","uPR","uPR"],
+hist:["h1","h1","h2","h3","h4","h5","h6","h7","h8","h9","h9","h10","h11","h12","h13","h14","h15","h16","h17","h18","h19","h20","h21","h21","h22","h23","h24","h25","h26","h27","h28","h29","h30","h31","h32","hPR"],
+eng:["e1","e3","e3","e1","e2","e3","e3","e2","e2","e3","e3","e2","e2","e3","e3","e2","e2","e3","e3","e2","e3","e3","e2","e3","e3","e2","e2","e3"]
+};
+
+// Для англійської кожна тема отримує власне посилання:
+// ENG_THEORY: реальна стаття (граматичні часи, лексика для власного висловлення на osvita.ua) або null —
+// тоді формується пошук відеоуроку на YouTube саме за назвою теми (значок ▶️).
+// ENG_TEST: реальний пробний тест з англійської мови на osvita.ua (значок 🔢), почергово тест №1/№2,
+// бо osvita.ua не ділить тренувальні тести з англійської на вузькі теми так, як з математики/укр. мови/історії.
+var ENG_THEORY=["e1","eVOC","eVOC","e1",null,"eVOC","eVOC",null,null,"eVOC","eVOC",null,null,"eVOC","eVOC",null,null,"eVOC","eVOC",null,"eVOC","eVOC",null,"eVOC","eVOC",null,null,"eESSAY"];
+var ENG_TEST=["eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2","eT1","eT2"];
+
+var BLOCKS = {
+math:[
+{t:"Числа і вирази",idx:[0,2,3,5,6,8,9,11,14,15,17,18,20,21,23,24,26,27,29,30,32,33]},
+{t:"Планіметрія: фігури, кути, площі",idx:[1,4,7,13,16,19,22,25,28,31,37,40,43,46,49,55,58,61]},
+{t:"Вектори та координати",idx:[91,94,97,100]},
+{t:"Рівняння, нерівності, параметри",idx:[36,38,39,41,42,44,45,47,48,50,53,54,56,57,59,60,62,63,108,110,111,113,114]},
+{t:"Функції, похідна, інтеграл, прогресії",idx:[66,68,69,71,72,75,77,78,80,81,89,90]},
+{t:"Стереометрія",idx:[67,70,73,76,79,82,85]},
+{t:"Комбінаторика, ймовірність, статистика",idx:[84,86,87]},
+{t:"Практика і повторення",idx:[10,12,34,35,51,52,64,65,74,83,88,92,93,95,96,98,99,101,102,103,104,105,106,107,109,112,115,116]}
+],
+ukr:[
+{t:"Фонетика. Орфоепія",idx:[0,1,2]},
+{t:"Орфографія",idx:[3,4,5,6,7,8,9,10,11,12,13,14,15,16]},
+{t:"Лексикологія",idx:[17,18,19]},
+{t:"Будова слова. Словотвір",idx:[20,21]},
+{t:"Морфологія",idx:[22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46]},
+{t:"Синтаксис. Пунктуація. Текст",idx:[47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},
+{t:"Практика і повторення",idx:[81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107]}
+],
+hist:[
+{t:"Від найдавніших часів до Русі-України",idx:[0,1,2,3,4,5]},
+{t:"Козаччина та Річ Посполита (XVI–XVIII ст.)",idx:[6,7,8,9,10,11,12]},
+{t:"Українські землі в імперіях (кін. XVIII – поч. XX ст.)",idx:[13,14,15,16,17,18,19]},
+{t:"Революція, тоталітаризм, світові війни",idx:[20,21,22,23,24,25,26,27,28]},
+{t:"Від повоєнних років до Незалежності",idx:[29,30,31,32,33]},
+{t:"Персоналії та підсумкове повторення",idx:[34,35]}
+],
+eng:[
+{t:"Граматика",idx:[0,3,4,7,8,11,12,15,16,19,22,25,26]},
+{t:"Лексичні теми та письмо",idx:[1,2,5,6,9,10,13,14,17,18,20,21,23,24,27]}
+]
+};
+
+var MATH_TAG_BASE="https://zno.osvita.ua/mathematics/";
+var MATH_TAG_FALLBACK="tema.html";
+function wholeWord(t,word){
+return new RegExp("(^|[^а-яіїєґ'])"+word+"([^а-яіїєґ']|$)","i").test(t);
+}
+function mathTestTag(t){
+if(/Піраміда/i.test(t)) return "tag-507/";
+if(/Конус|Циліндр|Сфера|тіла обертання|Комбінації тіл/i.test(t)||wholeWord(t,"куля")||wholeWord(t,"кулі")) return "tag-tila_obertannja/";
+if(/первісна|інтеграл/i.test(t)) return "tag-pervisna_ta_viznachenij_integral/";
+if(/похідна/i.test(t)) return "tag-pokhidna_funkciyi/";
+if(/прогрес/i.test(t)) return "tag-chislovi_poslidovnosti/";
+if(/многогранник|призма|паралелепіпед|куб/i.test(t)) return "tag-mnogogranniki/";
+if(/простор/i.test(t)&&/вектор|координат/i.test(t)) return "tag-koordinati_ta_vektori_u_prostori/";
+if(/прямі та площини у просторі/i.test(t)) return "tag-pryami_ta_ploshini_u_prostori/";
+if(/вектор|координати/i.test(t)) return "tag-koordinati_ta_vektori/";
+if(/трапеці|паралелограм|ромб/i.test(t)) return "tag-chotirikutniki/";
+if(/вписані та описані чотирикутник/i.test(t)) return "tag-chotirikutniki/";
+if(/прямокутник/i.test(t)) return "tag-prjamokutnyk_kvadrat/";
+if(/коло|круг|многокутник/i.test(t)) return "tag-kolo_ta_krugh_mnoghokutnyky/";
+if(/прямокутний трикутник/i.test(t)) return "tag-prjamokutni_trykutnyky/";
+if(/трикутник/i.test(t)) return "tag-trikutniki/";
+if(/вієта|дискримінант|тричлен/i.test(t)) return "tag-linijni_kvadratni_racionalni_rivnjannja_ta_systemy_rivnjan/";
+if(/кут|прямі|промені|відрізк/i.test(t)) return "tag-elementarni_geometrichni_figuri/";
+if(/графік/i.test(t)&&/показник|логарифм|тригоно/i.test(t)) return "tag-pokaznykovi_logharyfmichni_tryghonometrychni_funkciyi/";
+if(/графік/i.test(t)) return "tag-linijni_ta_kvadratni_funkciyi/";
+if(/функці/i.test(t)) return "tag-funkcionalna_zalezhnist_vlastivosti/";
+if(/ймовірн|статистик/i.test(t)) return "tag-jmovirnist_vypadkovoyi_podiyi/";
+if(/комбінаторик/i.test(t)) return "tag-kombinatorni_pravila/";
+if(/нерівност/i.test(t)) return "tag-nerivnosti_ta_systemy_nerivnostej/";
+if(/задачі на рух і роботу/i.test(t)) return "tag-rozvjazuvannja_zadach_z_rivnjan_i_system_rivnjan/";
+if(/параметр/i.test(t)) return null;
+if(/показникові.*рівнян|логарифмічні.*рівнян/i.test(t)) return "tag-pokaznykovi_logharyfmichni_rivnjannja_ta_systemy_rivnjan/";
+if(/ірраціональні рівнян|тригонометричні рівнян|рівняння з модулем/i.test(t)) return "tag-irracionalni_tryghonometrychni_rivnjannja_ta_systemy_rivnjan/";
+if(/рівнян/i.test(t)) return "tag-linijni_kvadratni_racionalni_rivnjannja_ta_systemy_rivnjan/";
+if(/формули зведення|формули додавання|тригонометр|показникові|логарифмічні/i.test(t)) return "tag-pokaznykovi_logharyfmichni_vyrazy/";
+if(/степен|корінь|многочлен|дроб|скороченого множення/i.test(t)) return "tag-racionalni_irracionalni_stepenevi_virazi/";
+if(/числ|дільність|множини чисел/i.test(t)) return "tag-dijsni_chysla/";
+if(/відсотк|пропорці|текстові задачі/i.test(t)) return "tag-vidnoshennya_ta_proporciyi/";
+if(/число|дільність|модуль числа|множини чисел/i.test(t)) return "tag-dijsni_chysla/";
+return null;
+}
+// Returns {url, kind} where kind is 'theory' or 'test'; url may be null if no verified direct source exists.
+function secondLink(subj,title){
+if(subj==='math'){
+var tag=mathTestTag(title);
+return {url:MATH_TAG_BASE+(tag||MATH_TAG_FALLBACK), kind:'test'};
+}
+if(subj==='ukr'){
+return {url:ytSearch(title,"українська мова"), kind:'theory'};
+}
+if(subj==='hist'){
+return {url:ytSearch(title,"історія України"), kind:'theory'};
+}
+if(subj==='eng'){
+return {url:FULL.ePR, kind:'test'};
+}
+return {url:null, kind:'test'};
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function todayStr(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0'); }
+
+function styleText(){
+return "body{margin:0;background:#F7F5F0;color:#20242A;font-family:Georgia,'Times New Roman',serif}"
++".wrap{max-width:640px;margin:0 auto;padding:22px 16px 70px}"
++"h1{font-size:1.35rem;margin:0 0 4px;font-weight:600}"
++".intro{font-size:.85rem;color:#5b6068;margin:0 0 6px;line-height:1.5}"
++".overall{margin:14px 0 26px}"
++".sync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 24px;padding:10px;background:#EFEDE5;border-radius:8px}"
++".sync input{flex:1;min-width:120px;font-size:.85rem;padding:6px 8px;border:1px solid #d8d5cc;border-radius:6px}"
++".sync button{font-size:.8rem;padding:6px 10px;border:none;border-radius:6px;background:#3B5BDB;color:#fff}"
++".subject{margin-bottom:30px}"
++".subject h2{font-size:1.08rem;margin:0 0 2px;padding-left:10px;border-left:4px solid var(--c)}"
++".meta{font-size:.78rem;color:#6b7280;margin:0 0 8px;padding-left:14px}"
++".bar{height:6px;background:#e7e4dc;border-radius:3px;overflow:hidden;margin:0 0 10px}"
++".bar i{display:block;height:100%;background:var(--c)}"
++".block-h{font-size:.72rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--c);margin:16px 0 4px;padding-left:2px}"
++".row{padding:10px 2px;border-bottom:1px solid #eae7de;font-size:.92rem}"
++".row-main{display:flex;align-items:flex-start;gap:8px}"
++".row-main input[type=checkbox]{margin-top:4px;width:22px;height:22px;accent-color:var(--c);flex-shrink:0}"
++".row-main .t{flex:1;line-height:1.45;padding-top:2px}"
++".row .num{color:#9aa0a8;margin-right:4px}"
++".row .t.done{color:#9aa0a8;text-decoration:line-through}"
++".row-main .lnk{flex-shrink:0;text-decoration:none;font-size:1.1rem;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;opacity:.9}"
++".row-main .lnk:active{background:#e7e4dc}"
++".row-main .lnk-empty{width:32px;flex-shrink:0}"
++".row-sub{display:flex;align-items:center;gap:10px;margin:6px 0 0;padding-left:30px}"
++".row-sub .date{font-size:.78rem;color:#8a8f96;flex-shrink:0}"
++".row-sub .n{flex:1;font-size:.85rem;color:#4b4f56;border:none;border-bottom:1px solid #d8d5cc;background:transparent;padding:5px 2px}"
++".mock{margin:10px 0 16px;padding:10px;background:#EFEDE5;border-radius:8px}"
++".mock h3{font-size:.82rem;margin:0 0 6px;font-weight:600}"
++".mock form{display:flex;gap:8px;margin-bottom:8px}"
++".mock input[type=number]{width:70px;font-size:.9rem;padding:7px 8px;border:1px solid #d8d5cc;border-radius:6px}"
++".mock button{font-size:.85rem;padding:7px 14px;border:none;border-radius:6px;background:var(--c);color:#fff}"
++".mock .hist{font-size:.78rem;color:#6b7280;display:flex;flex-wrap:wrap;gap:8px}"
++".mock .chip{background:#fff;border-radius:10px;padding:5px 6px 5px 10px;border:1px solid #e2dfd6;display:inline-flex;align-items:center;gap:6px}"
++".chip-x{border:none;background:transparent;color:#b3b8bf;padding:2px 4px;font-size:.85rem;cursor:pointer;line-height:1}"
++".chip-x:active{color:#c0392b}"
++"@media(prefers-color-scheme:dark){body{background:#1b1d21;color:#e7e5df}.bar{background:#33363c}.row{border-color:#33363c}.row .n{border-color:#44474d;color:#c9c7c0}.intro,.meta{color:#9a9da3}.mock{background:#26282c}.mock .chip{background:#1b1d21;border-color:#3a3d43}.sync{background:#26282c}.sync input{background:#1b1d21;border-color:#44474d;color:#e7e5df}}";
+}
+
+function syncBarHTML(){
+if(!db){
+return '<div class="sync"><span class="meta" style="padding-left:0">☁️ Хмарна синхронізація вимкнена. Щоб прогрес бачило на всіх пристроях — впиши свій Firebase-конфіг у файл (див. FIREBASE_CONFIG на початку коду). Без цього прогрес зберігається лише в пам\'яті цього браузера.</span></div>';
+}
+var code=getSyncCode();
+return '<div class="sync">'
++'<input id="syncCodeInput" placeholder="код синхронізації" value="'+esc(code)+'">'
++'<button type="button" onclick="applySyncCode()">Підключити</button>'
++'<button type="button" onclick="genSyncCode()">Створити новий код</button>'
++'<span id="syncStatusMsg" class="meta" style="padding-left:0">'+(code?'Код активний: '+esc(code):'Введи код на іншому пристрої, щоб з\'єднати прогрес')+'</span>'
++'</div>';
+}
+
+function render(){
+var overallDone=0, overallTotal=0, subjHtml='';
+ORDER.forEach(function(subj){
+var m=META[subj], list=TOPICS[subj], st=STATE[subj]||{};
+var done=0;
+list.forEach(function(_,i){ if(st[i]&&st[i].done) done++; });
+overallDone+=done; overallTotal+=list.length;
+var pct=Math.round(done/list.length*100);
+subjHtml+='<div class="subject" style="--c:'+m.color+'">';
+subjHtml+='<h2>'+m.name+'</h2>';
+subjHtml+='<p class="meta">'+done+'/'+list.length+' · ≈'+m.time+'</p>';
+subjHtml+='<div class="bar"><i style="width:'+pct+'%"></i></div>';
+var mocks=STATE.mockLog[subj]||[];
+subjHtml+='<div class="mock"><h3>Пробні тести</h3><form onsubmit="return addMock(event,\''+subj+'\')"><input type="number" min="0" max="200" placeholder="бал" required id="mi-'+subj+'"><button type="submit">Додати</button></form>';
+if(mocks.length){
+subjHtml+='<div class="hist">';
+mocks.forEach(function(mk,mi){ subjHtml+='<span class="chip">'+mk.date+': '+mk.score+'<button type="button" class="chip-x" title="Видалити" onclick="removeMock(\''+subj+'\','+mi+')">✕</button></span>'; });
+subjHtml+='</div>';
+} else {
+subjHtml+='<p class="meta" style="padding-left:0">Ще немає записів</p>';
+}
+subjHtml+='</div>';
+if(subj==='eng'){
+subjHtml+='<p class="meta" style="padding-left:0"><a href="'+FULL.eT1+'" target="_blank" rel="noopener">🔢 Пробний тест №1 НМТ з англійської (osvita.ua)</a> · <a href="'+FULL.eT2+'" target="_blank" rel="noopener">Тест №2</a></p>';
+}
+BLOCKS[subj].forEach(function(block){
+subjHtml+='<div class="block-h">'+esc(block.t)+'</div>';
+block.idx.forEach(function(i){
+var title=list[i];
+var d=st[i]||{};
+var theoryUrl, testUrl;
+if(subj==='eng'){
+theoryUrl=linkURL(ENG_THEORY[i])||ytSearch(title,"англійська мова граматика чи лексика");
+testUrl=null;
+} else {
+var existingUrl=linkURL(LINKS[subj][i]);
+var sec=secondLink(subj,title);
+if(subj==='math'){ theoryUrl=existingUrl; testUrl=sec.url; }
+else { testUrl=existingUrl; theoryUrl=sec.url; }
+}
+var isVid=/youtu\.?be/i.test(theoryUrl||'');
+subjHtml+='<div class="row">'
++'<div class="row-main">'
++'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+(i+1)+'.</span>'+esc(title)+'</span>'
++(theoryUrl?'<a class="lnk" href="'+theoryUrl+'" target="_blank" rel="noopener" title="'+(isVid?'Відеоурок':'Теорія')+'">'+(isVid?'▶️':'📖')+'</a>':'<span class="lnk lnk-empty"></span>')
++(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>')
++'</div>'
++'<div class="row-sub">'
++'<span class="date">'+(d.date||'')+'</span>'
++'<input class="n" placeholder="бал/нотатка" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
++'</div>'
++'</div>';
+});
+});
+subjHtml+='</div>';
+});
+var overallPct=Math.round(overallDone/overallTotal*100);
+var html='<div class="wrap"><h1>Тренажер підготовки до НМТ</h1>'
++'<p class="intro">Ритм: Пн/Ср/Пт — математика · Вт/Чт/Сб — українська · Пт — історія · Сб — англійська · Нд — повторення. Теми згруповані за розділами: 📖 — стаття з теорією (для англійської — граматичні таблиці або тематична лексика з osvita.ua), ▶️ — відеоурок (пряме посилання, або пошук на YouTube саме за назвою теми, якщо окремої перевіреної статті немає), 🔢 — тестування-пробник НМТ з osvita.ua (для англійської немає розбивки завдань за вузькими темами, тож посилання на пробні тести винесено одне на весь розділ, під прогрес-баром). Онови позначки після кожного заняття.</p>'
++'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div></div>'
++syncBarHTML()
++subjHtml+'</div>';
+document.getElementById('app').innerHTML=html;
+}
+
+function toggle(subj,i){
+STATE[subj]=STATE[subj]||{};
+var cur=STATE[subj][i]||{};
+cur.done=!cur.done;
+cur.date=cur.done?todayStr():'';
+STATE[subj][i]=cur;
+render();
+persist();
+}
+function noteChange(subj,i,val){
+STATE[subj]=STATE[subj]||{};
+var cur=STATE[subj][i]||{};
+cur.note=val;
+STATE[subj][i]=cur;
+persist();
+}
+
+function addMock(ev,subj){
+ev.preventDefault();
+var inp=document.getElementById('mi-'+subj);
+var val=parseFloat(inp.value);
+if(isNaN(val)) return false;
+STATE.mockLog=STATE.mockLog||{};
+STATE.mockLog[subj]=STATE.mockLog[subj]||[];
+STATE.mockLog[subj].push({date:todayStr(),score:val});
+render();
+persist();
+return false;
+}
+
+function removeMock(subj,idx){
+if(!STATE.mockLog||!STATE.mockLog[subj]) return;
+STATE.mockLog[subj].splice(idx,1);
+render();
+persist();
+}
+
+function persist(){
+try{
+localStorage.setItem('nmt-tracker-state', JSON.stringify(STATE));
+}catch(e){}
+cloudSave();
+}
+
+function loadSaved(){
+try{
+var raw=localStorage.getItem('nmt-tracker-state');
+return raw?JSON.parse(raw):null;
+}catch(e){ return null; }
+}
+
+function init(state){
+STATE=loadSaved()||state||{};
+ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
+STATE.mockLog=STATE.mockLog||{};
+ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
+var st=document.createElement('style');
+st.textContent=styleText();
+document.head.appendChild(st);
+render();
+initFirebase();
+var code=getSyncCode();
+if(db&&code){
+cloudLoad(code,function(remote){
+if(remote){
+STATE=remote;
+ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
+STATE.mockLog=STATE.mockLog||{};
+ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
+render();
+}
+});
+}
+}
+</script><script>eval(document.getElementById("logic").textContent);init({"math":{},"ukr":{},"hist":{},"eng":{},"mockLog":{"math":[],"ukr":[],"hist":[],"eng":[]}});</script></body></html>
