@@ -99,6 +99,24 @@ var FULL={mPR:"https://zno.osvita.ua/mathematics/tema.html",uPR:"https://zno.osv
 function ytSearch(title,ctx){
 return "https://www.youtube.com/results?search_query="+encodeURIComponent(title+" "+ctx+" НМТ теорія урок");
 }
+// Аналог ytSearch, але для пошуку письмового пояснення теми (стаття/правило),
+// коли прямого перевіреного посилання на статтю немає.
+function webSearch(title,ctx){
+return "https://www.google.com/search?q="+encodeURIComponent(title+" "+ctx+" правило теорія пояснення НМТ");
+}
+// Укр. мова: майже все — це правила-алгоритми (орфографія, відмінювання, пунктуація),
+// де краще підходить стаття (можна зупинитись на правилі, звірити приклад). 'both' —
+// лише для щільних розділів синтаксису, де текст важко "розпакувати" самостійно.
+function ukrMode(title){
+if(/складнопідрядн|кілька підрядних|різними видами зв|уточнювальн|вставні слова|цитат|пряма й непряма мова|заміна прямої мови|стил[іяю] мовлення|аналіз тексту|текст та його ознаки|синтаксична синоні|логічні й граматичні помилки/i.test(title)) return 'both';
+return 'text';
+}
+// Історія: за замовчуванням відео (нова щільна тема, легше почути логіку причин і наслідків),
+// 'both' — для найскладніших/найважливіших розділів (революція, тоталітаризм, світові війни).
+function histMode(title){
+if(/революці|тоталітар|більшовицьк|радянськ|десталінізаці|криза радянської системи|друга світова|перша світова/i.test(title)) return 'both';
+return 'video';
+}
 
 function linkURL(code){
 if(!code) return null;
@@ -200,6 +218,16 @@ if(/відсотк|пропорці|текстові задачі/i.test(t)) ret
 if(/число|дільність|модуль числа|множини чисел/i.test(t)) return "tag-dijsni_chysla/";
 return null;
 }
+// Визначає, що краще підходить для теми: 'video' (наочність важливіша — стереометрія,
+// графіки, многогранники, тіла обертання), 'text' (чіткий алгоритм — текстові задачі,
+// рівняння, нерівності, параметри) або 'both' (складна/абстрактна тема — і стаття, і відео).
+function mathMode(title){
+var t=title;
+if(/простор|многогранник|призма|піраміда|куля|сфер|конус|циліндр|тіла обертання|комбінації тіл|графік/i.test(t)) return 'video';
+if(/текстов|задачі на рух|задачі на роботу|рівнян|нерівност|параметр/i.test(t)) return 'text';
+if(/похідна|первісна|інтеграл|тригонометр|логарифм|показник/i.test(t)) return 'both';
+return 'both';
+}
 // Returns {url, kind} where kind is 'theory' or 'test'; url may be null if no verified direct source exists.
 function secondLink(subj,title){
 if(subj==='math'){
@@ -261,6 +289,8 @@ return ":root{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;--card:#F1
 +".row-main .lnk:active{background:var(--card);opacity:1}"
 +"@media(hover:hover){.row-main .lnk:hover{background:var(--card);opacity:1}}"
 +".row-main .lnk-empty{width:28px;flex-shrink:0}"
++".row-main .lnk-secondary{opacity:.4}"
++"@media(hover:hover){.row-main .lnk-secondary:hover{opacity:1}}"
 +".row-sub{display:flex;align-items:center;gap:8px;margin:4px 0 0;padding-left:26px}"
 +".row-sub .date{font-size:.72rem;color:var(--sub);flex-shrink:0;font-variant-numeric:tabular-nums}"
 +".row-sub .n{flex:1;font-size:.8rem;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;padding:4px 2px;font-family:inherit;min-width:0}"
@@ -326,26 +356,44 @@ subjHtml+='<div class="block-h">'+esc(block.t)+'</div>';
 block.idx.forEach(function(i){
 var title=list[i];
 var d=st[i]||{};
-var theoryUrl, testUrl;
+var linksHtml='';
 if(subj==='eng'){
-theoryUrl=linkURL(ENG_THEORY[i])||ytSearch(title,"англійська мова граматика чи лексика");
-testUrl=null;
-} else {
+var theoryUrl=linkURL(ENG_THEORY[i])||ytSearch(title,"англійська мова граматика чи лексика");
+var isVid=/youtu\.?be/i.test(theoryUrl||'');
+linksHtml+=(theoryUrl?'<a class="lnk" href="'+theoryUrl+'" target="_blank" rel="noopener" title="'+(isVid?'Відеоурок':'Теорія')+'">'+(isVid?'▶️':'📖')+'</a>':'<span class="lnk lnk-empty"></span>')
++'<span class="lnk lnk-empty"></span>';
+} else if(subj==='math'){
 var existingUrl=linkURL(LINKS[subj][i]);
 var sec=secondLink(subj,title);
-if(subj==='math'){
-theoryUrl=(LINKS[subj][i]==='mPR')?ytSearch(title,"математика"):existingUrl;
-testUrl=sec.url;
+var articleUrl=(LINKS[subj][i]==='mPR')?null:existingUrl;
+var videoUrl=ytSearch(title,"математика");
+var testUrl=sec.url;
+var mode=mathMode(title);
+var artSecondary=(mode==='video');
+var vidSecondary=(mode==='text');
+var artHtml=articleUrl?'<a class="lnk'+(artSecondary?' lnk-secondary':'')+'" href="'+articleUrl+'" target="_blank" rel="noopener" title="Теорія (стаття)'+(artSecondary?' — додатково, спочатку відео':'')+'">📖</a>':'<span class="lnk lnk-empty"></span>';
+var vidHtml='<a class="lnk'+(vidSecondary?' lnk-secondary':'')+'" href="'+videoUrl+'" target="_blank" rel="noopener" title="Відеоурок'+(vidSecondary?' — додатково, спочатку стаття':'')+'">▶️</a>';
+linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
++(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>');
+} else {
+var existingUrl=linkURL(LINKS[subj][i]);
+var testUrl=existingUrl;
+var subjCtx=(subj==='ukr')?"українська мова":"історія України";
+var videoUrl=ytSearch(title,subjCtx);
+var articleUrl=webSearch(title,subjCtx);
+var mode=(subj==='ukr')?ukrMode(title):histMode(title);
+var artSecondary=(mode==='video');
+var vidSecondary=(mode==='text');
+var artHtml='<a class="lnk'+(artSecondary?' lnk-secondary':'')+'" href="'+articleUrl+'" target="_blank" rel="noopener" title="Теорія (пошук статті)'+(artSecondary?' — додатково, спочатку відео':'')+'">📖</a>';
+var vidHtml='<a class="lnk'+(vidSecondary?' lnk-secondary':'')+'" href="'+videoUrl+'" target="_blank" rel="noopener" title="Відеоурок'+(vidSecondary?' — додатково, спочатку стаття':'')+'">▶️</a>';
+linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
++(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>');
 }
-else { testUrl=existingUrl; theoryUrl=sec.url; }
-}
-var isVid=/youtu\.?be/i.test(theoryUrl||'');
 subjHtml+='<div class="row">'
 +'<div class="row-main">'
 +'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'
 +'<span class="t'+(d.done?' done':'')+'"><span class="num">'+(i+1)+'.</span>'+esc(title)+'</span>'
-+(theoryUrl?'<a class="lnk" href="'+theoryUrl+'" target="_blank" rel="noopener" title="'+(isVid?'Відеоурок':'Теорія')+'">'+(isVid?'▶️':'📖')+'</a>':'<span class="lnk lnk-empty"></span>')
-+(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>')
++linksHtml
 +'</div>'
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
@@ -374,7 +422,8 @@ var html='<div class="wrap"><h1>Тренажер підготовки до НМ�
 +'<ul class="legend">'
 +'<li><span class="ic">📖</span> стаття з теорією (для англійської — граматика чи лексика з osvita.ua)</li>'
 +'<li><span class="ic">▶️</span> відеоурок (пряме посилання або пошук на YouTube за назвою теми)</li>'
-+'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua</li>'
++'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua (без змін для будь-якої теми)</li>'
++'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
 +'</ul>'
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div></div>'
 +syncBarHTML()
