@@ -394,8 +394,8 @@ ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
 var st=document.createElement('style');
 st.textContent=styleText();
 document.head.appendChild(st);
-render();
 initFirebase();
+render();
 var code=getSyncCode();
 if(db&&code){
 cloudLoad(code,function(remote){
