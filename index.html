@@ -112,7 +112,7 @@ return null;
 
 var LINKS = {
 math:["m24","m44","mPR","m7","m44","mPR","m5","m44","m25","m4","mPR","m1","mPR","m45","mPR","m6","m45","m6","m63","m45","m7","m7","m45","m3","m3","m46","m3","m9","m53","m10","m10","m52","m10","m10","mPR","mPR","m11","m47","m12","m12","m47","m13","m14","m48","m16","m17","m49","m15","m23","m51","m23","mPR","mPR","m18","m19","m47","m20","m20","m52","m21","m22","m52","m23","m23","mPR","mPR","m33","m56","m35","m34","m57","m34","m36","m58","mPR","m37","m59","m37","m40","m59","m38","m39","m59","mPR","m41","m60","m42","m43","mPR","m31","m32","m54","mPR","mPR","m55","mPR","mPR","m61","mPR","mPR","m62","mPR","mPR","mPR","mPR","mPR","mPR","mPR","m26","mPR","m26","m26","mPR","m29","m27","mPR","mPR"],
-ukr:["u1","u2","u2","uPR","u4","u4","u5","u6","u7","u8","u9","u10","u11","u11","u12","u13","u14","u15","u16","u17","u18","u18","u19","u20","u20","u21","u21","u21","u22","u22","u22","u23","u23","u23","u24","u24","u25","u25","u26","u27","u28","u28","u29","u30","u31","u19","u19","u32","u33","u33","u34","u34","u35","u36","u36","u37","u37","u38","u38","u39","u40","u39","u41","u41","u42","u42","u42","u42","u43","u43","u44","u45","u45","u45","u46","u46","uPR","u32","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","u2","uPR","uPR","uPR","uPR","u16","uPR","uPR","uPR","uPR","uPR"],
+ukr:["u1","u2","u2","uPR","u4","u4","u5","u6","u7","u8","u9","u10","u11","u11","u12","u13","u14","u15","u16","u17","u18","u18","u19","u20","u20","u21","u21","u21","u22","u22","u22","u23","u23","u23","u24","u24","u25","u25","u26","u27","u28","u28","u29","u30","u31","u19","u19","u32","u33","u33","u34","u34","u35","u36","u36","u37","u37","u38","u38","u39","u40","u39","u41","u41","u42","u42","u42","u42","u43","u43","u44","u45","u45","u45","u46","u46","uPR","u32","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","uPR","u2","uPR","uPR","uPR","uPR","u16","uPR","uPR","uPR","uPR","uPR","uPR","uPR"],
 hist:["h1","h1","h2","h3","h4","h5","h6","h7","h8","h9","h9","h10","h11","h12","h13","h14","h15","h16","h17","h18","h19","h20","h21","h21","h22","h23","h24","h25","h26","h27","h28","h29","h30","h31","h32","hPR"],
 eng:["e1","e3","e3","e1","e2","e3","e3","e2","e2","e3","e3","e2","e2","e3","e3","e2","e2","e3","e3","e2","e3","e3","e2","e3","e3","e2","e2","e3"]
 };
@@ -333,7 +333,10 @@ testUrl=null;
 } else {
 var existingUrl=linkURL(LINKS[subj][i]);
 var sec=secondLink(subj,title);
-if(subj==='math'){ theoryUrl=existingUrl; testUrl=sec.url; }
+if(subj==='math'){
+theoryUrl=(LINKS[subj][i]==='mPR')?ytSearch(title,"математика"):existingUrl;
+testUrl=sec.url;
+}
 else { testUrl=existingUrl; theoryUrl=sec.url; }
 }
 var isVid=/youtu\.?be/i.test(theoryUrl||'');
