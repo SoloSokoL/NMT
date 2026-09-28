@@ -179,14 +179,21 @@ eng:[
 
 var MATH_TAG_BASE="https://zno.osvita.ua/mathematics/";
 var MATH_TAG_FALLBACK="tema.html";
-var NMT_NUM="https://vseosvita.ua/test/nmt-chyslovi-mnozhyny-modul-chysla-podilnist-chysel-5355770.html";
+var NMT_NUM="https://naurok.com.ua/test/diysni-chisla-naturalni-racionalni-ta-irracionalni-porivnyannya-chisel-ta-di-z-nimi-3231803.html";
+var NMT_MOD="https://naurok.com.ua/test/racionalni-chisla-modul-chisla-1936713.html";
 // Вужчі тести саме під тему (перевірені посилання). Ключ — індекс теми в TOPICS.math.
 // osvita.ua ділить тести лише на широкі теги, тому для решти тем лишається загальний тег (або пропуск).
 var NARROW_TESTS={
-2:{url:"https://vseosvita.ua/test/nsd-i-nsk-1025526.html",label:"Тест лише на НСД та НСК (12 запитань, шкільний рівень)"},
-9:{url:NMT_NUM,label:"Тест НМТ: числові множини, модуль, подільність (15 запитань)"},
-11:{url:NMT_NUM,label:"Тест НМТ: числові множини, модуль, подільність (15 запитань)"}
+2:{url:"https://naurok.com.ua/test/nsd-ta-nsk-2420028.html",label:"Тест лише на НСД та НСК (На Урок)"},
+9:{url:NMT_MOD,label:"Тест: раціональні числа, модуль числа (На Урок)"},
+11:{url:NMT_NUM,label:"Тест НМТ: дійсні числа, числові множини (На Урок)"}
 };
+// Для тем, де немає перевіреного прямого посилання на вузький тест, формуємо пошук
+// саме тестів на цю конкретну тему (сайт "На Урок"), навмисно виключаючи Всеосвіту —
+// так 🎯 завжди веде до чогось вужчого й релевантнішого, ніж загальний тег osvita.ua.
+function narrowTestSearch(title){
+return "https://www.google.com/search?q="+encodeURIComponent('site:naurok.com.ua тест "'+title+'" -site:vseosvita.ua');
+}
 function wholeWord(t,word){
 return new RegExp("(^|[^а-яіїєґ'])"+word+"([^а-яіїєґ']|$)","i").test(t);
 }
@@ -468,13 +475,12 @@ linksHtml+=(theoryUrl?'<a class="lnk" href="'+theoryUrl+'" target="_blank" rel="
 +'<span class="lnk lnk-empty"></span>';
 } else if(subj==='math'){
 var existingUrl=linkURL(LINKS[subj][i]);
-var sec=secondLink(subj,title);
 var articleUrl=(LINKS[subj][i]==='mPR')?null:existingUrl;
 var videoUrl=ytSearch(title,"математика");
-var testUrl=sec.url;
 var nt=NARROW_TESTS[i];
-var testIcon='🔢', testTitle='Тестування-пробник НМТ (широка тема на osvita.ua)';
-if(nt){ testUrl=nt.url; testIcon='🎯'; testTitle=nt.label; }
+var testIcon='🎯';
+var testUrl=nt?nt.url:narrowTestSearch(title);
+var testTitle=nt?nt.label:'Вужчий тест саме на цю тему (пошук на "На Урок", без Всеосвіти)';
 var mode=mathMode(title);
 var artSecondary=(mode==='video');
 var vidSecondary=(mode==='text');
@@ -529,8 +535,8 @@ var html='<div class="wrap"><h1>Тренажер підготовки до НМ�
 +'<ul class="legend">'
 +'<li><span class="ic">📖</span> стаття з теорією (для англійської — граматика чи лексика з osvita.ua)</li>'
 +'<li><span class="ic">▶️</span> відеоурок (пряме посилання або пошук на YouTube за назвою теми)</li>'
-+'<li><span class="ic">🎯</span> вужчий тест саме під цю тему (математика; де його немає — лишається 🔢 загальний тег)</li>'
-+'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua (без змін для будь-якої теми)</li>'
++'<li><span class="ic">🎯</span> вужчий тест саме під цю тему (математика: перевірене посилання або пошук тестів точно за назвою теми, без Всеосвіти)</li>'
++'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua (укр. мова, історія, англійська)</li>'
 +'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
 +'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
 +'</ul>'
