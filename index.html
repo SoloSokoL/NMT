@@ -179,11 +179,19 @@ eng:[
 
 var MATH_TAG_BASE="https://zno.osvita.ua/mathematics/";
 var MATH_TAG_FALLBACK="tema.html";
+var NMT_NUM="https://vseosvita.ua/test/nmt-chyslovi-mnozhyny-modul-chysla-podilnist-chysel-5355770.html";
+// Вужчі тести саме під тему (перевірені посилання). Ключ — індекс теми в TOPICS.math.
+// osvita.ua ділить тести лише на широкі теги, тому для решти тем лишається загальний тег (або пропуск).
+var NARROW_TESTS={
+2:{url:"https://vseosvita.ua/test/nsd-i-nsk-1025526.html",label:"Тест лише на НСД та НСК (12 запитань, шкільний рівень)"},
+9:{url:NMT_NUM,label:"Тест НМТ: числові множини, модуль, подільність (15 запитань)"},
+11:{url:NMT_NUM,label:"Тест НМТ: числові множини, модуль, подільність (15 запитань)"}
+};
 function wholeWord(t,word){
 return new RegExp("(^|[^а-яіїєґ'])"+word+"([^а-яіїєґ']|$)","i").test(t);
 }
 function mathTestTag(t){
-if(/Піраміда/i.test(t)) return "tag-507/";
+if(/Піраміда/i.test(t)) return "tag-piramida/";
 if(/Конус|Циліндр|Сфера|тіла обертання|Комбінації тіл/i.test(t)||wholeWord(t,"куля")||wholeWord(t,"кулі")) return "tag-tila_obertannja/";
 if(/первісна|інтеграл/i.test(t)) return "tag-pervisna_ta_viznachenij_integral/";
 if(/похідна/i.test(t)) return "tag-pokhidna_funkciyi/";
@@ -200,8 +208,9 @@ if(/прямокутний трикутник/i.test(t)) return "tag-prjamokutni
 if(/трикутник/i.test(t)) return "tag-trikutniki/";
 if(/вієта|дискримінант|тричлен/i.test(t)) return "tag-linijni_kvadratni_racionalni_rivnjannja_ta_systemy_rivnjan/";
 if(/кут|прямі|промені|відрізк/i.test(t)) return "tag-elementarni_geometrichni_figuri/";
+if(/перетворення графік/i.test(t)) return "tag-funkcionalna_zalezhnist_vlastivosti/";
 if(/графік/i.test(t)&&/показник|логарифм|тригоно/i.test(t)) return "tag-pokaznykovi_logharyfmichni_tryghonometrychni_funkciyi/";
-if(/графік/i.test(t)) return "tag-linijni_ta_kvadratni_funkciyi/";
+if(/графік/i.test(t)) return "tag-linijni_ta_kvadratychni_funkciyi/";
 if(/функці/i.test(t)) return "tag-funkcionalna_zalezhnist_vlastivosti/";
 if(/ймовірн|статистик/i.test(t)) return "tag-jmovirnist_vypadkovoyi_podiyi/";
 if(/комбінаторик/i.test(t)) return "tag-kombinatorni_pravila/";
@@ -212,6 +221,8 @@ if(/показникові.*рівнян|логарифмічні.*рівнян/
 if(/ірраціональні рівнян|тригонометричні рівнян|рівняння з модулем/i.test(t)) return "tag-irracionalni_tryghonometrychni_rivnjannja_ta_systemy_rivnjan/";
 if(/рівнян/i.test(t)) return "tag-linijni_kvadratni_racionalni_rivnjannja_ta_systemy_rivnjan/";
 if(/формули зведення|формули додавання|тригонометр|показникові|логарифмічні/i.test(t)) return "tag-pokaznykovi_logharyfmichni_vyrazy/";
+if(/звичайні дроби/i.test(t)) return "tag-dijsni_chysla/";
+if(/текстові задачі/i.test(t)) return "tag-vidnoshennya_ta_proporciyi/";
 if(/степен|корінь|многочлен|дроб|скороченого множення/i.test(t)) return "tag-racionalni_irracionalni_stepenevi_virazi/";
 if(/числ|дільність|множини чисел/i.test(t)) return "tag-dijsni_chysla/";
 if(/відсотк|пропорці|текстові задачі/i.test(t)) return "tag-vidnoshennya_ta_proporciyi/";
@@ -227,6 +238,73 @@ if(/простор|многогранник|призма|піраміда|кул
 if(/текстов|задачі на рух|задачі на роботу|рівнян|нерівност|параметр/i.test(t)) return 'text';
 if(/похідна|первісна|інтеграл|тригонометр|логарифм|показник/i.test(t)) return 'both';
 return 'both';
+}
+// ---- Підсумкові тести блоків (математика) ----
+// Для кожного блоку в кінець додається рядок «Підсумковий тест блоку». Нові теми дописуються
+// в кінець масивів (індекси 117+), тому вже збережений прогрес по існуючих темах не зсувається.
+// Osvita.ua не має одного тесту на цілий блок, тому рядок містить посилання на тематичні
+// добірки всіх тем блоку — проходиш їх по черзі для закріплення.
+var TAG_LABEL={
+"tag-dijsni_chysla/":"Дійсні числа",
+"tag-vidnoshennya_ta_proporciyi/":"Відношення, відсотки, текстові задачі",
+"tag-pokaznykovi_logharyfmichni_vyrazy/":"Показникові, логарифмічні, тригонометричні вирази",
+"tag-racionalni_irracionalni_stepenevi_virazi/":"Раціональні, ірраціональні, степеневі вирази",
+"tag-linijni_kvadratni_racionalni_rivnjannja_ta_systemy_rivnjan/":"Лінійні, квадратні, раціональні рівняння",
+"tag-irracionalni_tryghonometrychni_rivnjannja_ta_systemy_rivnjan/":"Ірраціональні, тригонометричні рівняння",
+"tag-pokaznykovi_logharyfmichni_rivnjannja_ta_systemy_rivnjan/":"Показникові, логарифмічні рівняння",
+"tag-nerivnosti_ta_systemy_nerivnostej/":"Нерівності та системи нерівностей",
+"tag-rozvjazuvannja_zadach_z_rivnjan_i_system_rivnjan/":"Задачі за допомогою рівнянь",
+"tag-chislovi_poslidovnosti/":"Числові послідовності",
+"tag-funkcionalna_zalezhnist_vlastivosti/":"Функціональна залежність",
+"tag-linijni_ta_kvadratychni_funkciyi/":"Лінійні та квадратичні функції",
+"tag-pokaznykovi_logharyfmichni_tryghonometrychni_funkciyi/":"Степеневі, показникові, лог., тригонометричні функції",
+"tag-pokhidna_funkciyi/":"Похідна функції",
+"tag-pervisna_ta_viznachenij_integral/":"Первісна та інтеграл",
+"tag-kombinatorni_pravila/":"Комбінаторика",
+"tag-jmovirnist_vypadkovoyi_podiyi/":"Ймовірність і статистика",
+"tag-elementarni_geometrichni_figuri/":"Елементарні фігури",
+"tag-trikutniki/":"Трикутники",
+"tag-prjamokutni_trykutnyky/":"Прямокутні трикутники",
+"tag-chotirikutniki/":"Паралелограм, ромб, трапеція",
+"tag-prjamokutnyk_kvadrat/":"Прямокутник, квадрат",
+"tag-kolo_ta_krugh_mnoghokutnyky/":"Коло, круг, многокутники",
+"tag-koordinati_ta_vektori/":"Координати та вектори на площині",
+"tag-pryami_ta_ploshini_u_prostori/":"Прямі та площини у просторі",
+"tag-mnogogranniki/":"Призма",
+"tag-piramida/":"Піраміда",
+"tag-tila_obertannja/":"Тіла обертання",
+"tag-koordinati_ta_vektori_u_prostori/":"Координати та вектори у просторі"
+};
+var FINAL_ROWS={}; // індекс теми -> {block:об'єкт блоку} або {links:[{label,url}]}
+(function(){
+BLOCKS.math.forEach(function(block,bi){
+var isPractice=(bi===BLOCKS.math.length-1);
+var idx=TOPICS.math.length;
+TOPICS.math.push(isPractice?"Підсумковий тест: повні варіанти НМТ (закріплення всього курсу)":"Підсумковий тест блоку «"+block.t+"»");
+LINKS.math.push("mPR");
+if(isPractice){
+FINAL_ROWS[idx]={links:[
+{label:"Тренувальні варіанти НМТ 2027",url:MATH_TAG_BASE+"nmt.html"},
+{label:"НМТ 2026 — 1 сесія",url:MATH_TAG_BASE+"846/"},
+{label:"НМТ 2026 — 2 сесія",url:MATH_TAG_BASE+"847/"}
+]};
+} else {
+FINAL_ROWS[idx]={block:block};
+}
+block.idx.push(idx);
+});
+})();
+// Посилання на тематичні добірки для всіх тем блоку (унікальні, у порядку появи; без порожніх).
+function finalLinks(idx){
+var fr=FINAL_ROWS[idx];
+if(fr.links) return fr.links;
+var seen={}, out=[];
+fr.block.idx.forEach(function(i){
+if(FINAL_ROWS[i]) return;
+var tag=mathTestTag(TOPICS.math[i]);
+if(tag&&!seen[tag]&&TAG_LABEL[tag]){ seen[tag]=1; out.push({label:TAG_LABEL[tag],url:MATH_TAG_BASE+tag}); }
+});
+return out;
 }
 // Returns {url, kind} where kind is 'theory' or 'test'; url may be null if no verified direct source exists.
 function secondLink(subj,title){
@@ -291,6 +369,11 @@ return ":root{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;--card:#F1
 +".row-main .lnk-empty{width:28px;flex-shrink:0}"
 +".row-main .lnk-secondary{opacity:.4}"
 +"@media(hover:hover){.row-main .lnk-secondary:hover{opacity:1}}"
++".row-final .t{font-weight:600}"
++".fin-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;padding-left:26px}"
++".fin-chip{font-size:.74rem;line-height:1.3;text-decoration:none;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:4px 9px}"
++".fin-chip:active{border-color:var(--c)}"
++"@media(hover:hover){.fin-chip:hover{border-color:var(--c)}}"
 +".row-sub{display:flex;align-items:center;gap:8px;margin:4px 0 0;padding-left:26px}"
 +".row-sub .date{font-size:.72rem;color:var(--sub);flex-shrink:0;font-variant-numeric:tabular-nums}"
 +".row-sub .n{flex:1;font-size:.8rem;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;padding:4px 2px;font-family:inherit;min-width:0}"
@@ -351,11 +434,32 @@ subjHtml+='</div>';
 if(subj==='eng'){
 subjHtml+='<p class="meta" style="padding-left:0"><a href="'+FULL.eT1+'" target="_blank" rel="noopener">🔢 Пробний тест №1 НМТ з англійської (osvita.ua)</a> · <a href="'+FULL.eT2+'" target="_blank" rel="noopener">Тест №2</a></p>';
 }
+var seq=0;
 BLOCKS[subj].forEach(function(block){
 subjHtml+='<div class="block-h">'+esc(block.t)+'</div>';
 block.idx.forEach(function(i){
+seq++;
 var title=list[i];
 var d=st[i]||{};
+if(subj==='math'&&FINAL_ROWS[i]){
+var chips=finalLinks(i).map(function(l){
+return '<a class="fin-chip" href="'+l.url+'" target="_blank" rel="noopener">🔢 '+esc(l.label)+'</a>';
+}).join('');
+subjHtml+='<div class="row row-final">'
++'<div class="row-main">'
++'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+'</span>'
++'</div>'
++'<div class="fin-chips">'+chips+'</div>'
++'<div class="row-sub">'
++'<span class="date">'+(d.date||'')+'</span>'
++'<input class="n" placeholder="бал/нотатка" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
++'<span class="cnt-label">завдань:</span>'
++'<input class="cnt" type="number" min="0" max="999" value="'+esc(d.count||'')+'" onchange="countChange(\''+subj+'\','+i+',this.value)">'
++'</div>'
++'</div>';
+return;
+}
 var linksHtml='';
 if(subj==='eng'){
 var theoryUrl=linkURL(ENG_THEORY[i])||ytSearch(title,"англійська мова граматика чи лексика");
@@ -368,13 +472,16 @@ var sec=secondLink(subj,title);
 var articleUrl=(LINKS[subj][i]==='mPR')?null:existingUrl;
 var videoUrl=ytSearch(title,"математика");
 var testUrl=sec.url;
+var nt=NARROW_TESTS[i];
+var testIcon='🔢', testTitle='Тестування-пробник НМТ (широка тема на osvita.ua)';
+if(nt){ testUrl=nt.url; testIcon='🎯'; testTitle=nt.label; }
 var mode=mathMode(title);
 var artSecondary=(mode==='video');
 var vidSecondary=(mode==='text');
 var artHtml=articleUrl?'<a class="lnk'+(artSecondary?' lnk-secondary':'')+'" href="'+articleUrl+'" target="_blank" rel="noopener" title="Теорія (стаття)'+(artSecondary?' — додатково, спочатку відео':'')+'">📖</a>':'<span class="lnk lnk-empty"></span>';
 var vidHtml='<a class="lnk'+(vidSecondary?' lnk-secondary':'')+'" href="'+videoUrl+'" target="_blank" rel="noopener" title="Відеоурок'+(vidSecondary?' — додатково, спочатку стаття':'')+'">▶️</a>';
 linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
-+(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>');
++(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="'+esc(testTitle)+'">'+testIcon+'</a>':'<span class="lnk lnk-empty"></span>');
 } else {
 var existingUrl=linkURL(LINKS[subj][i]);
 var testUrl=existingUrl;
@@ -392,7 +499,7 @@ linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
 subjHtml+='<div class="row">'
 +'<div class="row-main">'
 +'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'
-+'<span class="t'+(d.done?' done':'')+'"><span class="num">'+(i+1)+'.</span>'+esc(title)+'</span>'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>'+esc(title)+'</span>'
 +linksHtml
 +'</div>'
 +'<div class="row-sub">'
@@ -422,8 +529,10 @@ var html='<div class="wrap"><h1>Тренажер підготовки до НМ�
 +'<ul class="legend">'
 +'<li><span class="ic">📖</span> стаття з теорією (для англійської — граматика чи лексика з osvita.ua)</li>'
 +'<li><span class="ic">▶️</span> відеоурок (пряме посилання або пошук на YouTube за назвою теми)</li>'
++'<li><span class="ic">🎯</span> вужчий тест саме під цю тему (математика; де його немає — лишається 🔢 загальний тег)</li>'
 +'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua (без змін для будь-якої теми)</li>'
 +'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
++'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
 +'</ul>'
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div></div>'
 +syncBarHTML()
