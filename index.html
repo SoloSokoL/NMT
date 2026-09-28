@@ -4,7 +4,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head><body><div id="app">Завантаження…</div><script>
+<link rel="stylesheet" href="ext.css">
+</head><body><div id="app">Завантаження…</div><script src="ext.js"></script><script>
 var FIREBASE_CONFIG = {
 apiKey: "AIzaSyAynY9aCL3XZMsNlmzyXsn5k59bfqEYjvA",
 authDomain: "nmt-tracker-f1957.firebaseapp.com",
@@ -45,10 +46,7 @@ if(!db){ if(st) st.textContent='Хмара не налаштована у фай
 if(st) st.textContent='Завантаження…';
 cloudLoad(code,function(remote){
 if(remote){
-STATE=remote;
-ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
-STATE.mockLog=STATE.mockLog||{};
-ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
+STATE=mergeState(STATE,remote); norm();
 render();
 persist();
 if(st) st.textContent='Синхронізовано ✓';
@@ -437,6 +435,7 @@ subjHtml+='</div>';
 } else {
 subjHtml+='<p class="meta" style="padding-left:0">Ще немає записів</p>';
 }
+subjHtml+=trendHTML(mocks,m.color);
 subjHtml+='</div>';
 if(subj==='eng'){
 subjHtml+='<p class="meta" style="padding-left:0"><a href="'+FULL.eT1+'" target="_blank" rel="noopener">🔢 Пробний тест №1 НМТ з англійської (osvita.ua)</a> · <a href="'+FULL.eT2+'" target="_blank" rel="noopener">Тест №2</a></p>';
@@ -452,9 +451,9 @@ if(subj==='math'&&FINAL_ROWS[i]){
 var chips=finalLinks(i).map(function(l){
 return '<a class="fin-chip" href="'+l.url+'" target="_blank" rel="noopener">🔢 '+esc(l.label)+'</a>';
 }).join('');
-subjHtml+='<div class="row row-final">'
+subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'">'
 +'<div class="row-main">'
-+'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'
++'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
 +'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+'</span>'
 +'</div>'
 +'<div class="fin-chips">'+chips+'</div>'
@@ -502,9 +501,9 @@ var vidHtml='<a class="lnk'+(vidSecondary?' lnk-secondary':'')+'" href="'+videoU
 linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
 +(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>');
 }
-subjHtml+='<div class="row">'
+subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'">'
 +'<div class="row-main">'
-+'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'
++'<input type="checkbox" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
 +'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>'+esc(title)+'</span>'
 +linksHtml
 +'</div>'
@@ -540,32 +539,26 @@ var html='<div class="wrap"><h1>Тренажер підготовки до НМ�
 +'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
 +'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
 +'</ul>'
++dashHTML()
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div></div>'
 +syncBarHTML()
++errHTML()+toolbarHTML()
 +subjHtml+'</div>';
 document.getElementById('app').innerHTML=html;
+afterRender();
 }
 
-function toggle(subj,i){
-STATE[subj]=STATE[subj]||{};
-var cur=STATE[subj][i]||{};
-cur.done=!cur.done;
-cur.date=cur.done?todayStr():'';
-STATE[subj][i]=cur;
-render();
-persist();
-}
 function noteChange(subj,i,val){
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][i]||{};
-cur.note=val;
+cur.note=val; cur.upd=Date.now();
 STATE[subj][i]=cur;
 persist();
 }
 function countChange(subj,i,val){
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][i]||{};
-cur.count=val;
+cur.count=val; cur.upd=Date.now();
 STATE[subj][i]=cur;
 persist();
 }
@@ -578,6 +571,7 @@ if(isNaN(val)) return false;
 STATE.mockLog=STATE.mockLog||{};
 STATE.mockLog[subj]=STATE.mockLog[subj]||[];
 STATE.mockLog[subj].push({date:todayStr(),score:val});
+STATE.lupd=Date.now(); bump();
 render();
 persist();
 return false;
@@ -586,6 +580,7 @@ return false;
 function removeMock(subj,idx){
 if(!STATE.mockLog||!STATE.mockLog[subj]) return;
 STATE.mockLog[subj].splice(idx,1);
+STATE.lupd=Date.now();
 render();
 persist();
 }
@@ -606,9 +601,7 @@ return raw?JSON.parse(raw):null;
 
 function init(state){
 STATE=loadSaved()||state||{};
-ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
-STATE.mockLog=STATE.mockLog||{};
-ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
+norm();
 var st=document.createElement('style');
 st.textContent=styleText();
 document.head.appendChild(st);
@@ -618,10 +611,7 @@ var code=getSyncCode();
 if(db&&code){
 cloudLoad(code,function(remote){
 if(remote){
-STATE=remote;
-ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
-STATE.mockLog=STATE.mockLog||{};
-ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
+STATE=mergeState(STATE,remote); norm();
 render();
 }
 });
