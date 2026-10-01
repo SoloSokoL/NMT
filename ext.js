@@ -34,11 +34,51 @@ function norm(){
 ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
 STATE.mockLog=STATE.mockLog||{};
 ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
-STATE.errs=STATE.errs||[]; STATE.cfg=STATE.cfg||{}; STATE.act=STATE.act||{};
+STATE.errs=STATE.errs||[]; STATE.cfg=STATE.cfg||{}; STATE.act=STATE.act||{}; STATE.archive=STATE.archive||{};
+}
+// ---- Версія схеми й міграція: прогрес за індексом (STATE[subj][0..n]) -> за стабільним id (STATE[subj]['math-0003']) ----
+var SCHEMA=2;
+function ST(s,i){ return (STATE[s]||{})[TID[s][i]]; }
+// Нічого не перезаписує: повертає нову копію. Теми, яких більше немає в списку, йдуть в STATE.archive разом із назвою.
+function migrate(S){
+S=S||{};
+if((S.ver||1)>=SCHEMA) return S;
+var o={}, f;
+for(f in S) if(ORDER.indexOf(f)<0) o[f]=S[f];
+o.archive=JSON.parse(JSON.stringify(S.archive||{}));
+ORDER.forEach(function(s){
+var live={}, m=S[s]||{}; o[s]={};
+TID[s].forEach(function(id){ live[id]=1; });
+Object.keys(m).forEach(function(k){
+var id=/^\d+$/.test(k)?s+'-'+('0000'+k).slice(-4):k;
+if(live[id]) o[s][id]=m[k];
+else{ var e=JSON.parse(JSON.stringify(m[k]||{})); e.title=DROPPED[id]||e.title||''; (o.archive[s]=o.archive[s]||{})[id]=e; }
+});
+});
+o.ver=SCHEMA; return o;
+}
+// Перед першою міграцією кладе страхову копію старого формату (окремий ключ; основні ключі не чіпає).
+function backupLegacy(){
+try{
+var raw=localStorage.getItem('nmt-tracker-state');
+if(raw&&!localStorage.getItem('nmt-state-v1-backup')&&!(JSON.parse(raw).ver>=SCHEMA)) localStorage.setItem('nmt-state-v1-backup',raw);
+}catch(e){}
+}
+function archiveHTML(){
+var rows=[], dn=0;
+ORDER.forEach(function(s){
+var a=(STATE.archive||{})[s]||{};
+Object.keys(a).forEach(function(k){
+var e=a[k]; if(e.done) dn++;
+rows.push('<div class="er"><span>'+(ICON[s]||'')+' '+esc(e.title||k)+' <i>'+(e.done?esc(e.date||'виконано'):'не виконано')+'</i></span></div>');
+});
+});
+if(!rows.length) return '';
+return '<details class="card blk"><summary>🗂️ Архів прогресу ('+rows.length+' тем, виконано: '+dn+')</summary><p class="meta">Теми, яких вже немає в списку. Дані збережені й потрапляють у копії та хмару.</p>'+rows.join('')+'</details>';
 }
 // Злиття локального й хмарного прогресу: для кожної теми виграє новіша зміна, нічого не губиться.
 function mergeState(a,b){
-var A=a||{}, B=b||{}, o={};
+var A=migrate(a), B=migrate(b), o={ver:SCHEMA,archive:{}};
 ORDER.forEach(function(s){
 o[s]={}; var x=A[s]||{}, y=B[s]||{};
 Object.keys(x).concat(Object.keys(y)).forEach(function(k){
@@ -61,30 +101,33 @@ var ca=A.cfg||{}, cb=B.cfg||{};
 o.cfg=(cb.upd||0)>(ca.upd||0)?cb:ca;
 o.act={};
 [A.act||{},B.act||{}].forEach(function(m){ for(var k in m) o.act[k]=Math.max(o.act[k]||0,m[k]); });
+[A.archive||{},B.archive||{}].forEach(function(m){
+for(var s in m){ o.archive[s]=o.archive[s]||{}; for(var k in m[s]){ var p=o.archive[s][k], q=m[s][k]; if(!p||(q.upd||0)>(p.upd||0)) o.archive[s][k]=q; } }
+});
 return o;
 }
 
 function toggle(subj,i){
 STATE[subj]=STATE[subj]||{};
-var cur=STATE[subj][i]||{}, n=Date.now();
+var cur=STATE[subj][TID[subj][i]]||{}, n=Date.now();
 cur.done=!cur.done; cur.upd=n;
 if(cur.done){ cur.date=todayStr(); cur.ts=n; cur.last=n; cur.rv=0; bump(); }
 else { cur.date=''; delete cur.ts; delete cur.last; cur.rv=0; }
-STATE[subj][i]=cur;
+STATE[subj][TID[subj][i]]=cur;
 render(); persist();
 }
 function cycleConf(subj,i){
 STATE[subj]=STATE[subj]||{};
-var cur=STATE[subj][i]||{};
+var cur=STATE[subj][TID[subj][i]]||{};
 cur.conf=((cur.conf||0)%3)+1; cur.upd=Date.now();
-STATE[subj][i]=cur;
+STATE[subj][TID[subj][i]]=cur;
 render(); persist();
 }
 function confBtn(subj,i,d){
 return '<button type="button" class="conf c'+(d.conf||0)+'" title="Впевненість у темі: 🔴 слабо · 🟡 так собі · 🟢 добре" onclick="cycleConf(\''+subj+'\','+i+')"></button>';
 }
 function reviewTopic(subj,i,ok){
-var cur=(STATE[subj]||{})[i]; if(!cur) return;
+var cur=(STATE[subj]||{})[TID[subj][i]]; if(!cur) return;
 var n=Date.now();
 if(ok){ cur.rv=(cur.rv||0)+1; if(cur.conf===1) cur.conf=2; } else { cur.rv=0; cur.conf=1; }
 cur.last=n; cur.upd=n; bump();
@@ -117,7 +160,7 @@ function dashHTML(){
 var n=Date.now(), ex=(STATE.cfg&&STATE.cfg.exam)||'', left=0, tot=0, recent=0, h='';
 ORDER.forEach(function(s){
 TOPICS[s].forEach(function(_,i){
-tot++; var d=STATE[s][i];
+tot++; var d=ST(s,i);
 if(d&&d.done){ if(n-doneTs(d)<14*DAY) recent++; } else left++;
 });
 });
@@ -140,14 +183,14 @@ h+='<div class="card"><h3>📅 Сьогодні <span class="pill">🔥 сері
 if(!subs.length) h+='<p class="meta">Неділя: повторення, помилки, легкий тест.</p>';
 subs.forEach(function(s){
 var nx=[];
-for(var i=0;i<TOPICS[s].length&&nx.length<2;i++){ if(!(STATE[s][i]&&STATE[s][i].done)) nx.push(i); }
+for(var i=0;i<TOPICS[s].length&&nx.length<2;i++){ if(!(ST(s,i)&&ST(s,i).done)) nx.push(i); }
 h+='<div class="tl" style="--c:'+META[s].color+'"><b>'+ICON[s]+' '+META[s].name+'</b>'+(nx.length?'':'<span>усе пройдено 🎉</span>');
 nx.forEach(function(i){ h+='<a href="#r-'+s+'-'+i+'">'+esc(TOPICS[s][i])+'</a>'; });
 h+='</div>';
 });
 var due=[];
 ORDER.forEach(function(s){
-for(var k in STATE[s]){ var x=dueIn(STATE[s][k]); if(x!==null&&x<=0) due.push({s:s,i:+k,x:x}); }
+for(var k=0;k<TID[s].length;k++){ var x=dueIn(ST(s,k)); if(x!==null&&x<=0) due.push({s:s,i:k,x:x}); }
 });
 due.sort(function(a,b){ return a.x-b.x; });
 h+='<h4>🔁 Повторити: '+due.length+'</h4>'+(due.length?'<p class="meta">Спершу згадай тему без підглядання, потім відповідай чесно.</p>':'<p class="meta">Черга порожня.</p>');
