@@ -1,6 +1,16 @@
 /* ===== Розширення: план, повторення, помилки, копії, безпечна синхронізація ===== */
 var DAY=86400000, REV=[1,3,7,14,30,60];
-var SCHED=[['math'],['ukr'],['math'],['ukr'],['math','hist'],['ukr','eng'],[]];
+// Розклад тижня (Пн..Нд): єдине джерело правди і для смужки тижня, і для блоку «Сьогодні». Порожній день — повторення.
+// Історія дає найбільше балів (54), тому має два дні.
+var WEEK=[['math'],['ukr'],['hist'],['math'],['ukr','eng'],['math','hist'],[]];
+var SCHED=WEEK, WEEKD=['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+function rhythmHTML(){
+return '<div class="rhythm">'+WEEK.map(function(subs,i){
+var ttl=subs.length?subs.map(function(s){ return META[s].name; }).join(', '):'Повторення';
+var dots=subs.length?subs.map(function(s){ return '<i class="dot" style="background:'+META[s].color+'"></i>'; }).join(''):'<i class="dot" style="background:#9a9da3"></i>';
+return '<div class="day" title="'+ttl+'"><span>'+WEEKD[i]+'</span><div class="dots">'+dots+'</div></div>';
+}).join('')+'</div>';
+}
 var ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'🇬🇧'};
 var UI={q:'',hd:false,eo:false};
 try{ UI.hd=localStorage.getItem('nmt-hd')==='1'; }catch(e){}
@@ -36,32 +46,94 @@ STATE.mockLog=STATE.mockLog||{};
 ORDER.forEach(function(s){ STATE.mockLog[s]=STATE.mockLog[s]||[]; });
 STATE.errs=STATE.errs||[]; STATE.cfg=STATE.cfg||{}; STATE.act=STATE.act||{}; STATE.archive=STATE.archive||{};
 }
-// ---- Версія схеми й міграція: прогрес за індексом (STATE[subj][0..n]) -> за стабільним id (STATE[subj]['math-0003']) ----
-var SCHEMA=2;
+// ---- Версія схеми й міграція ----
+// v1: прогрес за індексом (STATE[subj][0..n]); v2: за стабільним id ('math-0003'); v3: оновлений список тем (злиття, архів, нові теми).
+var SCHEMA=3;
 function ST(s,i){ return (STATE[s]||{})[TID[s][i]]; }
-// Нічого не перезаписує: повертає нову копію. Теми, яких більше немає в списку, йдуть в STATE.archive разом із назвою.
-function migrate(S){
-S=S||{};
-if((S.ver||1)>=SCHEMA) return S;
+function clone(x){ return JSON.parse(JSON.stringify(x)); }
+function pad4(n){ return ('0000'+n).slice(-4); }
+// Склад списку у версії 2: id, які тоді були «живими».
+function v2Live(s){
+var r={}, i;
+if(s==='math') V2_MATH.forEach(function(n){ r[s+'-'+pad4(n)]=1; });
+else for(i=0;i<V2_COUNT[s];i++) r[s+'-'+pad4(i)]=1;
+return r;
+}
+function hasData(e){ return !!(e&&(e.done||e.note||e.conf||e.count||e.rv>0||e.date)); }
+function toArchive(o,s,id,e,into){
+var c=clone(e); c.title=OLD_T[id]||DROPPED[id]||c.title||''; if(into) c.into=into;
+(o.archive[s]=o.archive[s]||{})[id]=c;
+}
+// v1 -> v2. Нічого не перезаписує: повертає нову копію. Теми, яких не було в списку v2, йдуть в STATE.archive разом із назвою.
+function migrateV1(S){
 var o={}, f;
 for(f in S) if(ORDER.indexOf(f)<0) o[f]=S[f];
-o.archive=JSON.parse(JSON.stringify(S.archive||{}));
+o.archive=clone(S.archive||{});
 ORDER.forEach(function(s){
-var live={}, m=S[s]||{}; o[s]={};
-TID[s].forEach(function(id){ live[id]=1; });
+var live=v2Live(s), m=S[s]||{}; o[s]={};
 Object.keys(m).forEach(function(k){
-var id=/^\d+$/.test(k)?s+'-'+('0000'+k).slice(-4):k;
+var id=/^\d+$/.test(k)?s+'-'+pad4(k):k;
 if(live[id]) o[s][id]=m[k];
-else{ var e=JSON.parse(JSON.stringify(m[k]||{})); e.title=DROPPED[id]||e.title||''; (o.archive[s]=o.archive[s]||{})[id]=e; }
+else{ var e=clone(m[k]||{}); e.title=DROPPED[id]||e.title||''; (o.archive[s]=o.archive[s]||{})[id]=e; }
 });
 });
-o.ver=SCHEMA; return o;
+o.ver=2; return o;
 }
-// Перед першою міграцією кладе страхову копію старого формату (окремий ключ; основні ключі не чіпає).
+// Об'єднує записи старих тем у запис злитої (усі старі виконані): найпізніша дата, найслабша впевненість, найменший лічильник повторень.
+function mergeDone(es){
+var best=es.slice().sort(function(a,b){ return doneTs(b)-doneTs(a); })[0], e=clone(best);
+var confs=es.map(function(x){ return x.conf||0; }).filter(function(c){ return c>0; });
+var notes=es.map(function(x){ return (x.note||'').trim(); }).filter(Boolean);
+var cnt=es.map(function(x){ return x.count; }).filter(function(c){ return c!==undefined&&c!==''&&c!==null; });
+e.done=true;
+e.upd=Math.max.apply(null,es.map(function(x){ return x.upd||0; }));
+e.last=Math.max.apply(null,es.map(lastTs)); if(!e.last) delete e.last;
+e.rv=Math.min.apply(null,es.map(function(x){ return x.rv||0; }));
+if(confs.length) e.conf=Math.min.apply(null,confs); else delete e.conf;
+if(notes.length) e.note=notes.join(' · '); else delete e.note;
+if(cnt.length){ var nums=cnt.every(function(c){ return /^\d+$/.test(String(c)); }); e.count=nums?String(cnt.reduce(function(a,c){ return a+(+c); },0)):cnt.join(' + '); } else delete e.count;
+return e;
+}
+// v2 -> v3. Нова тема виконана, лише якщо виконані ВСІ її старі теми.
+// Інакше вона лишається невиконаною, а старі записи (дата, нотатки, впевненість) йдуть в архів з полем into.
+function migrateV2(S){
+var o={}, f;
+for(f in S) if(ORDER.indexOf(f)<0) o[f]=S[f];
+o.archive=clone(S.archive||{});
+ORDER.forEach(function(s){
+var m=S[s]||{}, out={}, claimed={}, live={}, arch={}, groups=MERGE_V3[s]||{};
+TID[s].forEach(function(id){ live[id]=1; });
+(ARCH_V3[s]||[]).forEach(function(id){ arch[id]=1; });
+Object.keys(groups).forEach(function(nid){
+var olds=groups[nid], es=olds.map(function(id){ return m[id]; });
+olds.forEach(function(id){ claimed[id]=1; });
+if(es.every(function(e){ return e&&e.done; })) out[nid]=mergeDone(es);
+else olds.forEach(function(id){ if(hasData(m[id])) toArchive(o,s,id,m[id],nid); });
+});
+Object.keys(m).forEach(function(k){
+if(claimed[k]) return;
+if(arch[k]){ if(hasData(m[k])) toArchive(o,s,k,m[k],null); return; }
+if(live[k]) out[k]=m[k];
+else if(hasData(m[k])) toArchive(o,s,k,m[k],null);
+});
+o[s]=out;
+});
+o.ver=3; return o;
+}
+function migrate(S){
+S=S||{};
+var v=S.ver||1;
+if(v>=SCHEMA) return S;
+if(v<2) S=migrateV1(S);
+return migrateV2(S);
+}
+// Перед міграцією кладе страхову копію попереднього формату (окремі ключі; основні не чіпає).
 function backupLegacy(){
 try{
-var raw=localStorage.getItem('nmt-tracker-state');
-if(raw&&!localStorage.getItem('nmt-state-v1-backup')&&!(JSON.parse(raw).ver>=SCHEMA)) localStorage.setItem('nmt-state-v1-backup',raw);
+var raw=localStorage.getItem('nmt-tracker-state'); if(!raw) return;
+var v=JSON.parse(raw).ver||1;
+if(v<2&&!localStorage.getItem('nmt-state-v1-backup')) localStorage.setItem('nmt-state-v1-backup',raw);
+if(v===2&&!localStorage.getItem('nmt-state-v2-backup')) localStorage.setItem('nmt-state-v2-backup',raw);
 }catch(e){}
 }
 function archiveHTML(){
@@ -70,11 +142,12 @@ ORDER.forEach(function(s){
 var a=(STATE.archive||{})[s]||{};
 Object.keys(a).forEach(function(k){
 var e=a[k]; if(e.done) dn++;
-rows.push('<div class="er"><span>'+(ICON[s]||'')+' '+esc(e.title||k)+' <i>'+(e.done?esc(e.date||'виконано'):'не виконано')+'</i></span></div>');
+var tgt=''; if(e.into){ var ti=TID[s].indexOf(e.into); if(ti>-1) tgt=' → '+esc(TOPICS[s][ti]); }
+rows.push('<div class="er"><span>'+(ICON[s]||'')+' '+esc(e.title||k)+' <i>'+(e.done?esc(e.date||'виконано'):'не виконано')+tgt+'</i></span></div>');
 });
 });
 if(!rows.length) return '';
-return '<details class="card blk"><summary>🗂️ Архів прогресу ('+rows.length+' тем, виконано: '+dn+')</summary><p class="meta">Теми, яких вже немає в списку. Дані збережені й потрапляють у копії та хмару.</p>'+rows.join('')+'</details>';
+return '<details class="card blk"><summary>🗂️ Архів прогресу ('+rows.length+' тем, виконано: '+dn+')</summary><p class="meta">Старі теми, які об\'єднано або прибрано зі списку (стрілка веде до нової теми). Дані збережені й потрапляють у копії та хмару.</p>'+rows.join('')+'</details>';
 }
 // Злиття локального й хмарного прогресу: для кожної теми виграє новіша зміна, нічого не губиться.
 function mergeState(a,b){
