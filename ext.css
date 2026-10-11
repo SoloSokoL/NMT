@@ -50,12 +50,6 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 .now-t{display:block;color:var(--ink);text-decoration:none;font-size:1.02rem;line-height:1.4}
 .now-t:hover{text-decoration:underline}
 .now-n a{color:var(--ink)}
-.tm-disp{font-family:'Fraunces',Georgia,serif;font-size:2.4rem;font-weight:600;font-variant-numeric:tabular-nums;margin:2px 0 10px;letter-spacing:.01em}
-.tm-disp.warn{color:#F59F00}
-.tm-disp.crit{color:#E03131}
-#tmCard select{font:inherit;font-size:.8rem;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--ink);max-width:100%}
-#tmCard input{font:inherit;font-size:.8rem;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--ink);width:80px}
-#tmCard button,.card button{min-height:34px}
 .mstat{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:.76rem;color:var(--sub);margin:0 0 8px}
 .mstat b{color:var(--ink)}
 .mstat .gl{width:58px;font:inherit;font-size:.8rem;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--ink)}
@@ -75,8 +69,67 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 .legend-d>summary{cursor:pointer;font-size:.78rem;color:var(--sub);padding:4px 0}
 .legend-d .legend{margin-top:6px}
 @media(pointer:coarse){
-.row-sub .n,.row-sub .cnt,.row-sub .pc,.sync input,.errf input,.errf select,.tools input[type=search],.mock input[type=number],.plan-row input,#tmCard select,#tmCard input,.mstat .gl{font-size:16px}
+.row-sub .n,.row-sub .cnt,.row-sub .pc,.sync input,.errf input,.errf select,.tools input[type=search],.mock input[type=number],.plan-row input,.mstat .gl{font-size:16px}
 .row-sub .cnt,.row-sub .pc{width:46px}
 .row-main .lnk{width:34px;height:34px}
 .row-main input[type=checkbox]{width:22px;height:22px}
 }
+
+/* ===== v5: візуал та анімації (лише transform/opacity; вимикаються при prefers-reduced-motion) ===== */
+:root{--r:16px;--ease:cubic-bezier(.22,.8,.3,1)}
+#app h1{font-size:1.85rem;background:linear-gradient(100deg,var(--ink) 40%,#3B5BDB);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding-bottom:2px}
+#app .intro{font-size:.86rem}
+#app .subject{position:relative;overflow:hidden;border-radius:var(--r);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+#app .subject::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+#app .subject h2{font-size:1.15rem;padding-top:4px}
+#app .card{border-radius:var(--r);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+@media(hover:hover){
+#app .subject:hover,#app .card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -12px rgba(43,38,32,.28)}
+}
+#app .bar{height:9px;border-radius:6px}
+#app .bar i{background:linear-gradient(90deg,var(--c),#ffffff55 160%),var(--c);border-radius:6px;transform-origin:left center}
+#app .overall{border-radius:var(--r);background:color-mix(in srgb,var(--card2) 88%,transparent)}
+#app .subnav a{transition:transform .15s var(--ease),filter .15s}
+#app .subnav a:active,#app .card button:active,#app .sync button:active,#app .mock button:active,.thm:active{transform:scale(.95)}
+@media(hover:hover){#app .subnav a:hover{transform:translateY(-1px);filter:brightness(1.05)}}
+#app .row{position:relative}
+#app .row.due{box-shadow:none}
+#app .row.due::after{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:#F59F00}
+#app .row-main input[type=checkbox]{transition:transform .15s var(--ease)}
+#app .row-main input[type=checkbox]:active{transform:scale(.8)}
+#app .row-main input[type=checkbox]:checked{animation:pop .3s var(--ease)}
+#app .row .t{transition:opacity .2s}
+#app .row .t.done{opacity:.6}
+#app .conf{transition:transform .15s var(--ease)}
+#app .conf:active{transform:scale(1.35)}
+.row:target::before{content:'';position:absolute;inset:0;border-radius:8px;background:#3B5BDB;pointer-events:none;animation:flash 1.6s ease-out}
+#app .card.now{background:linear-gradient(135deg,color-mix(in srgb,#3B5BDB 9%,var(--card2)),var(--card2))}
+#app .pill{transition:transform .2s var(--ease)}
+details.card>summary{list-style:none;display:flex;align-items:center;gap:6px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:'›';margin-left:auto;font-size:1.3rem;color:var(--sub);transition:transform .2s var(--ease)}
+details.card[open]>summary::after{transform:rotate(90deg)}
+details[open]>:not(summary){animation:fade .25s ease-out}
+.fin-chip{transition:transform .15s var(--ease),border-color .15s}
+@media(hover:hover){.fin-chip:hover{transform:translateY(-1px)}}
+.mock .chip{animation:fade .25s ease-out}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes flash{from{opacity:.2}to{opacity:0}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.enter #app h1,.enter #app .intro,.enter .card,.enter .rhythm,.enter .overall,.enter .subject{animation:rise .55s var(--ease) both}
+.enter .intro{animation-delay:.04s}
+.enter .card.now{animation-delay:.08s}
+.enter .rhythm{animation-delay:.12s}
+.enter .dash{animation:none}
+.enter .dash .card:nth-child(1){animation-delay:.16s}
+.enter .dash .card:nth-child(2){animation-delay:.22s}
+.enter .overall{animation-delay:.2s}
+.enter .subject:nth-child(1){animation-delay:.26s}
+.enter .subject:nth-child(2){animation-delay:.32s}
+.enter .subject:nth-child(3){animation-delay:.38s}
+.enter .subject:nth-child(4){animation-delay:.44s}
+.enter .bar i{animation:grow .9s var(--ease) .35s both}
+@media(prefers-reduced-motion:reduce){.enter *,.row:target::before{animation:none!important}}

@@ -307,7 +307,7 @@ function afterRender(){
 var ds=document.querySelectorAll('.rhythm .day'), wd=(new Date().getDay()+6)%7;
 if(ds[wd]) ds[wd].classList.add('today');
 applyFilter();
-tmEnsure();
+enterAnim();
 }
 
 function trendHTML(m,color){
@@ -342,96 +342,11 @@ r.readAsText(f);
 }
 
 /* ===== v4: «що робити зараз», таймер пробника, слабкі теми, статистика, тема оформлення ===== */
-var TM_KEY='nmt-timer';
-var TM_PRE=[{m:120,n:'Блок НМТ: 2 предмети · 120 хв'},{m:60,n:'Один предмет · 60 хв'},{m:30,n:'Півблоку · 30 хв'}];
-var TM={dur:7200,st:'idle',end:0,left:7200,subj:'math'}, tmIv=null, wl=null;
-function tmLoad(){ try{ var o=JSON.parse(localStorage.getItem(TM_KEY)||'null'); if(o&&o.dur&&o.st) TM=o; }catch(e){} }
-function tmSave(){ try{ localStorage.setItem(TM_KEY,JSON.stringify(TM)); }catch(e){} }
-function tmLeft(){
-if(TM.st==='run') return Math.max(0,Math.round((TM.end-Date.now())/1000));
-if(TM.st==='pause') return TM.left;
-if(TM.st==='done') return 0;
-return TM.dur;
-}
-function fmt(s){ var h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0'); }
-function wlOn(){ try{ if(navigator.wakeLock&&!wl) navigator.wakeLock.request('screen').then(function(l){ wl=l; l.addEventListener('release',function(){ wl=null; }); }).catch(function(){}); }catch(e){} }
-function wlOff(){ try{ if(wl){ wl.release(); wl=null; } }catch(e){} }
-function beep(){
-try{
-var C=window.AudioContext||window.webkitAudioContext; if(!C) return;
-var c=new C(), o=c.createOscillator(), g=c.createGain();
-o.connect(g); g.connect(c.destination); o.frequency.value=880; g.gain.value=.15;
-o.start(); o.stop(c.currentTime+.6);
-}catch(e){}
-}
-function tmTick(){
-if(TM.st!=='run') return;
-var l=tmLeft(), el=document.getElementById('tmDisp');
-if(el){ el.textContent=fmt(l); el.className='tm-disp'+(l<=300?' crit':l<=900?' warn':''); }
-document.title=fmt(l)+' · Тренажер НМТ';
-if(l<=0) tmFinish();
-}
-function tmFinish(){
-TM.st='done'; TM.left=0; tmSave();
-if(tmIv){ clearInterval(tmIv); tmIv=null; }
-wlOff(); document.title='Тренажер підготовки до НМТ';
-try{ if(navigator.vibrate) navigator.vibrate([300,150,300,150,600]); }catch(e){}
-beep(); bump(); render(); persist();
-}
-function tmEnsure(){
-if(TM.st==='run'){
-if(tmLeft()<=0){ tmFinish(); return; }
-if(!tmIv) tmIv=setInterval(tmTick,1000);
-wlOn();
-} else if(document.title!=='Тренажер підготовки до НМТ') document.title='Тренажер підготовки до НМТ';
-}
-function tmStart(){
-var now=Date.now();
-if(TM.st==='pause') TM.end=now+TM.left*1000;
-else TM.end=now+TM.dur*1000;
-TM.st='run'; tmSave(); wlOn(); render();
-}
-function tmPause(){ TM.left=tmLeft(); TM.st='pause'; tmSave(); if(tmIv){ clearInterval(tmIv); tmIv=null; } wlOff(); render(); }
-function tmReset(){ TM.st='idle'; TM.left=TM.dur; tmSave(); if(tmIv){ clearInterval(tmIv); tmIv=null; } wlOff(); render(); }
-function tmSetDur(m){ TM.dur=(+m||120)*60; TM.left=TM.dur; tmSave(); render(); }
-function tmSetSubj(s){ TM.subj=s; tmSave(); }
 function logMock(subj,val){
 STATE.mockLog=STATE.mockLog||{}; STATE.mockLog[subj]=STATE.mockLog[subj]||[];
 STATE.mockLog[subj].push({date:todayStr(),score:val});
 STATE.lupd=Date.now(); bump();
 }
-function tmLog(ev){
-ev.preventDefault();
-var s=document.getElementById('tmS').value, v=parseFloat(document.getElementById('tmV').value);
-if(isNaN(v)) return false;
-logMock(s,v); TM.subj=s; TM.st='idle'; TM.left=TM.dur; tmSave(); render(); persist();
-return false;
-}
-function tmErr(){
-UI.eo=true; render();
-var b=document.getElementById('errBox'); if(b&&b.scrollIntoView) b.scrollIntoView({block:'start'});
-var i=document.getElementById('errT'); if(i) i.focus();
-}
-function tmHTML(){
-var st=TM.st, left=tmLeft(), lock=(st==='run'||st==='pause');
-var h='<div class="card" id="tmCard"><h3>⏱️ Пробний НМТ на час</h3>';
-h+='<div class="tm-disp'+(st==='run'?(left<=300?' crit':left<=900?' warn':''):'')+'" id="tmDisp" role="timer">'+fmt(left)+'</div>';
-if(st==='done'){
-h+='<p class="meta" style="padding-left:0">Час вийшов. Запиши результат і одразу розбери помилки — це дає найбільший приріст.</p>';
-h+='<form class="plan-row" onsubmit="return tmLog(event)"><select id="tmS" aria-label="Предмет">'+ORDER.map(function(s){ return '<option value="'+s+'"'+(s===TM.subj?' selected':'')+'>'+META[s].name+'</option>'; }).join('')+'</select>'
-+'<input id="tmV" type="number" min="0" max="200" placeholder="бал" required aria-label="Бал за пробник"><button type="submit" class="ok">Зберегти бал</button></form>';
-h+='<div class="plan-row" style="margin-top:8px"><button type="button" onclick="tmErr()">📓 Записати помилки</button><button type="button" onclick="tmReset()">Новий пробник</button></div>';
-return h+'</div>';
-}
-h+='<div class="plan-row"><select aria-label="Тривалість" '+(lock?'disabled':'')+' onchange="tmSetDur(this.value)">'+TM_PRE.map(function(p){ return '<option value="'+p.m+'"'+(p.m*60===TM.dur?' selected':'')+'>'+p.n+'</option>'; }).join('')+'</select>';
-h+='<select aria-label="Предмет пробника" '+(lock?'disabled':'')+' onchange="tmSetSubj(this.value)">'+ORDER.map(function(s){ return '<option value="'+s+'"'+(s===TM.subj?' selected':'')+'>'+META[s].name+'</option>'; }).join('')+'</select></div>';
-h+='<div class="plan-row" style="margin-top:8px">'
-+(st==='run'?'<button type="button" onclick="tmPause()">⏸ Пауза</button>':'<button type="button" class="ok" onclick="tmStart()">▶ '+(st==='pause'?'Продовжити':'Старт')+'</button>')
-+(st!=='idle'?'<button type="button" onclick="tmReset()">Скинути</button>':'')+'</div>';
-h+='<p class="meta" style="padding-left:0">Офіційно НМТ 2026: два 120-хвилинні блоки по два предмети з перервою 20 хв. Екран не гасне, поки йде таймер.</p>';
-return h+'</div>';
-}
-
 // ---- Слабкі теми і що робити зараз ----
 function pctOf(d){ return (d&&d.pct!==undefined&&d.pct!==''&&d.pct!==null)?+d.pct:null; }
 function weakList(){
@@ -476,12 +391,12 @@ if(best) nxt=best;
 }
 var weak=weakList(), ue=(STATE.errs||[]).filter(function(e){ return !e.fx; }).length, m=null;
 function tl(o){ return ICON[o.s]+' '+esc(TOPICS[o.s][o.i]); }
-if(dl>0&&dl<=28&&TM.st!=='run') m={k:'⏱️ Пробний НМТ на час',t:'Зроби повний пробник',href:'#tmCard',s:'До НМТ '+dl+' дн. — тепер головне пробники й розбір помилок.'};
+if(dl>0&&dl<=28) m={k:'📝 Повний пробник НМТ',t:'Пройди варіант на час',href:'#sub-math',s:'До НМТ '+dl+' дн. — тепер головне пробники й розбір помилок.'};
 else if(due.length) m={k:'🔁 Повтори (≈10 хв)',t:tl(due[0]),href:'#r-'+due[0].s+'-'+due[0].i,s:'Спершу згадай без підглядання, потім відповідай чесно. У черзі: '+due.length+'.'};
 else if(weak.length) m={k:'🔴 Закріпи слабку тему',t:tl(weak[0]),href:'#r-'+weak[0].s+'-'+weak[0].i,s:'Перерішай 10–15 завдань, потім онови «тест %».'};
 else if(ue) m={k:'📓 Розбери помилки',t:'Нерозібраних: '+ue,href:'#errBox',s:'Перерішай їх без підглядання і познач «Перерішав».'};
 else if(nxt) m={k:'🆕 Нова тема',t:tl(nxt),href:'#r-'+nxt.s+'-'+nxt.i,s:'≈'+META[nxt.s].time+'. Після теми зроби тест і впиши %.'};
-else m={k:'🏁 Усі теми пройдено',t:'Роби пробники на час',href:'#tmCard',s:'Далі — пробні НМТ і розбір помилок.'};
+else m={k:'🏁 Усі теми пройдено',t:'Роби повні пробники',href:'#sub-math',s:'Далі — пробні НМТ і розбір помилок.'};
 var h='<div class="card now"><div class="now-k">▶ Що робити зараз</div><a class="now-t" href="'+m.href+'"><b>'+m.k+':</b> '+m.t+'</a><p class="meta">'+m.s+'</p>';
 if(nxt&&m.k.indexOf('Нова')<0) h+='<p class="meta now-n">Далі нова тема: <a href="#r-'+nxt.s+'-'+nxt.i+'">'+tl(nxt)+'</a></p>';
 return h+'</div>';
@@ -542,6 +457,13 @@ var dn=0, t=TID[s].length; for(var i=0;i<t;i++){ var d=ST(s,i); if(d&&d.done) dn
 return '<a href="#sub-'+s+'" style="--c:'+META[s].color+'" title="'+META[s].name+'">'+ICON[s]+' '+Math.round(dn/t*100)+'%</a>';
 }).join('')+'<button type="button" class="thm" onclick="cycleTheme()" aria-label="Тема оформлення: '+THEME_NM[getTheme()]+'" title="Тема: '+THEME_NM[getTheme()]+'">'+THEME_IC[getTheme()]+'</button></nav>';
 }
-tmLoad(); applyTheme();
+applyTheme();
 if('serviceWorker' in navigator) window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
-document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&TM.st==='run'){ wlOn(); tmTick(); } });
+
+// Анімація входу лише при першому показі (render() перебудовує DOM, тож без цього вона б повторювалась при кожному кліку)
+var ENTERED=false;
+function enterAnim(){
+if(ENTERED) return; ENTERED=true;
+var b=document.body; b.classList.add('enter');
+setTimeout(function(){ b.classList.remove('enter'); },1400);
+}
