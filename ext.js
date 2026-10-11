@@ -192,12 +192,12 @@ render(); persist();
 function cycleConf(subj,i){
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][TID[subj][i]]||{};
-cur.conf=((cur.conf||0)%3)+1; cur.upd=Date.now();
+cur.conf=({0:3,3:2,2:1,1:3})[cur.conf||0]; cur.upd=Date.now();
 STATE[subj][TID[subj][i]]=cur;
 render(); persist();
 }
 function confBtn(subj,i,d){
-return '<button type="button" class="conf c'+(d.conf||0)+'" title="Впевненість у темі: 🔴 слабо · 🟡 так собі · 🟢 добре" aria-label="Впевненість: '+['не оцінено','слабко','так собі','добре'][d.conf||0]+'" onclick="cycleConf(\''+subj+'\','+i+')"></button>';
+return '<button type="button" class="conf c'+(d.conf||0)+'" title="Впевненість у темі (клік змінює): 🟢 добре · 🟡 так собі · 🔴 слабо" aria-label="Впевненість: '+['не оцінено','слабко','так собі','добре'][d.conf||0]+'" onclick="cycleConf(\''+subj+'\','+i+')"></button>';
 }
 function reviewTopic(subj,i,ok){
 var cur=(STATE[subj]||{})[TID[subj][i]]; if(!cur) return;
@@ -367,13 +367,13 @@ return n;
 function weakHTML(){
 var w=weakList(), un=unrated();
 var h='<details class="card blk" id="weakBox"'+(w.length?' open':'')+'><summary>🔴 Слабкі теми ('+w.length+')</summary>';
-if(!w.length) h+='<p class="meta">Поки порожньо. Став 🔴/🟡/🟢 біля теми або впиши «тест %» — слабкі теми з\'являться тут і повторюватимуться вдвічі частіше.</p>';
+if(!w.length) h+='<p class="meta">Поки порожньо. Став 🟢/🟡/🔴 біля теми або впиши «тест %» — слабкі теми з\'являться тут і повторюватимуться вдвічі частіше.</p>';
 w.slice(0,12).forEach(function(o){
 h+='<div class="rv" style="--c:'+META[o.s].color+'"><a href="#r-'+o.s+'-'+o.i+'">'+ICON[o.s]+' '+esc(TOPICS[o.s][o.i])+(o.p!==null?' <i>'+o.p+'%</i>':'')+'</a>'
 +'<button type="button" class="ok" onclick="reviewTopic(\''+o.s+'\','+o.i+',1)">Закріпив ✓</button></div>';
 });
 if(w.length>12) h+='<p class="meta">…і ще '+(w.length-12)+'</p>';
-if(un) h+='<p class="meta">Виконаних тем без оцінки впевненості: '+un+'. Постав крапку 🔴🟡🟢 — без цього тренажер не знає, що повторювати.</p>';
+if(un) h+='<p class="meta">Виконаних тем без оцінки впевненості: '+un+'. Постав крапку 🟢🟡🔴 — без цього тренажер не знає, що повторювати.</p>';
 return h+'</details>';
 }
 function nowHTML(){
