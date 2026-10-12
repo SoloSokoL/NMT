@@ -79,12 +79,12 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 :root{--r:16px;--ease:cubic-bezier(.22,.8,.3,1)}
 #app h1{font-size:1.85rem;background:linear-gradient(100deg,var(--ink) 40%,#3B5BDB);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding-bottom:2px}
 #app .intro{font-size:.86rem}
-#app .subject{position:relative;overflow:hidden;border-radius:var(--r);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+#app .subject{position:relative;overflow:hidden;border-radius:var(--r)}
 #app .subject::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
 #app .subject h2{font-size:1.15rem;padding-top:4px}
 #app .card{border-radius:var(--r);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
 @media(hover:hover){
-#app .subject:hover,#app .card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -12px rgba(43,38,32,.28)}
+#app .card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -12px rgba(43,38,32,.28)}
 }
 #app .bar{height:9px;border-radius:6px}
 #app .bar i{background:linear-gradient(90deg,var(--c),#ffffff55 160%),var(--c);border-radius:6px;transform-origin:left center}
@@ -97,7 +97,8 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 #app .row.due::after{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:#F59F00}
 #app .row-main input[type=checkbox]{transition:transform .15s var(--ease)}
 #app .row-main input[type=checkbox]:active{transform:scale(.8)}
-#app .row-main input[type=checkbox]:checked{animation:pop .3s var(--ease)}
+#app .row-main input.pop{animation:pop .32s var(--ease)}
+#app .conf.pulse{animation:pulse .4s var(--ease)}
 #app .row .t{transition:opacity .2s}
 #app .row .t.done{opacity:.6}
 #app .conf{transition:transform .15s var(--ease)}
@@ -116,6 +117,7 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pulse{0%{transform:scale(1)}45%{transform:scale(1.6)}100%{transform:scale(1)}}
 @keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 @keyframes flash{from{opacity:.2}to{opacity:0}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -134,3 +136,13 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 .enter .bar i{animation:grow .9s var(--ease) .35s both}
 @media(prefers-reduced-motion:reduce){.enter *,.row:target::before{animation:none!important}}
 
+
+/* хмарний код у лівому куті, панель — лише при наведенні/тапі */
+#app .wrap{position:relative;padding-top:56px}
+.cloud{position:absolute;top:12px;left:16px;z-index:30}
+.cloud-b{font-family:inherit;font-size:.74rem;font-weight:600;max-width:62vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card2);color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .15s var(--ease)}
+.cloud-b:active{transform:scale(.96)}
+.cloud-p{position:absolute;top:100%;left:0;padding-top:6px;width:min(88vw,340px);visibility:hidden;opacity:0;transform:translateY(-4px);transition:opacity .2s ease,transform .2s var(--ease),visibility .2s}
+.cloud:hover .cloud-p,.cloud:focus-within .cloud-p,.cloud.open .cloud-p{visibility:visible;opacity:1;transform:none}
+.cloud-pi.sync{margin:0;background:var(--card2);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px}
+@media(prefers-reduced-motion:reduce){.cloud-p,.cloud-b{transition:none}}

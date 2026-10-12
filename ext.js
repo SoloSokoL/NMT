@@ -11,8 +11,8 @@ var dots=subs.length?subs.map(function(s){ return '<i class="dot" style="backgro
 return '<div class="day" title="'+ttl+'"><span>'+WEEKD[i]+'</span><div class="dots">'+dots+'</div></div>';
 }).join('')+'</div>';
 }
-var ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'🇬🇧'};
-var UI={q:'',hd:false,eo:false};
+var ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'💬'};
+var UI={q:'',hd:false,co:false};
 try{ UI.hd=localStorage.getItem('nmt-hd')==='1'; }catch(e){}
 
 function isoDay(t){ var d=new Date(t); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -136,19 +136,6 @@ if(v<2&&!localStorage.getItem('nmt-state-v1-backup')) localStorage.setItem('nmt-
 if(v===2&&!localStorage.getItem('nmt-state-v2-backup')) localStorage.setItem('nmt-state-v2-backup',raw);
 }catch(e){}
 }
-function archiveHTML(){
-var rows=[], dn=0;
-ORDER.forEach(function(s){
-var a=(STATE.archive||{})[s]||{};
-Object.keys(a).forEach(function(k){
-var e=a[k]; if(e.done) dn++;
-var tgt=''; if(e.into){ var ti=TID[s].indexOf(e.into); if(ti>-1) tgt=' → '+esc(TOPICS[s][ti]); }
-rows.push('<div class="er"><span>'+(ICON[s]||'')+' '+esc(e.title||k)+' <i>'+(e.done?esc(e.date||'виконано'):'не виконано')+tgt+'</i></span></div>');
-});
-});
-if(!rows.length) return '';
-return '<details class="card blk"><summary>🗂️ Архів прогресу ('+rows.length+' тем, виконано: '+dn+')</summary><p class="meta">Старі теми, які об\'єднано або прибрано зі списку (стрілка веде до нової теми). Дані збережені й потрапляють у копії та хмару.</p>'+rows.join('')+'</details>';
-}
 // Злиття локального й хмарного прогресу: для кожної теми виграє новіша зміна, нічого не губиться.
 function mergeState(a,b){
 var A=migrate(a), B=migrate(b), o={ver:SCHEMA,archive:{}};
@@ -181,6 +168,7 @@ return o;
 }
 
 function toggle(subj,i){
+LAST_ROW={id:'r-'+subj+'-'+i,kind:'done'};
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][TID[subj][i]]||{}, n=Date.now();
 cur.done=!cur.done; cur.upd=n;
@@ -190,6 +178,7 @@ STATE[subj][TID[subj][i]]=cur;
 render(); persist();
 }
 function cycleConf(subj,i){
+LAST_ROW={id:'r-'+subj+'-'+i,kind:'conf'};
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][TID[subj][i]]||{};
 cur.conf=({0:3,3:2,2:1,1:0})[cur.conf||0]; cur.upd=Date.now();
@@ -211,24 +200,6 @@ STATE.cfg=STATE.cfg||{}; STATE.cfg.exam=v; STATE.cfg.upd=Date.now();
 render(); persist();
 }
 
-function addErr(ev){
-ev.preventDefault();
-var s=document.getElementById('errS').value, t=(document.getElementById('errT').value||'').trim();
-if(!t) return false;
-var n=Date.now();
-STATE.errs=STATE.errs||[]; STATE.errs.push({id:n,s:s,t:t.slice(0,300),ts:n,fx:0});
-STATE.lupd=n; bump(); UI.eo=true; render(); persist();
-return false;
-}
-function fixErr(id){
-(STATE.errs||[]).forEach(function(e){ if(e.id===id) e.fx=e.fx?0:1; });
-STATE.lupd=Date.now(); bump(); render(); persist();
-}
-function delErr(id){
-STATE.errs=(STATE.errs||[]).filter(function(e){ return e.id!==id; });
-STATE.lupd=Date.now(); render(); persist();
-}
-
 function dashHTML(){
 var n=Date.now(), ex=(STATE.cfg&&STATE.cfg.exam)||'', left=0, tot=0, recent=0, h='';
 ORDER.forEach(function(s){
@@ -244,7 +215,7 @@ if(dl>0) h+='<span class="pill">до НМТ '+dl+' дн.</span>';
 h+='</div>';
 if(!ex) h+='<p class="meta">Вкажи дату НМТ — з\'явиться потрібний темп навчання.</p>';
 else if(!(dl>0)) h+='<p class="meta">Дата вже минула або некоректна — онови її.</p>';
-else if(dl<=28) h+='<p class="meta">Режим фінішу: повні пробні НМТ на час, журнал помилок і повторення. Нових тем — мінімум.</p>';
+else if(dl<=28) h+='<p class="meta">Режим фінішу: повні пробні НМТ і повторення. Нових тем — мінімум.</p>';
 else{
 var need=left/((dl-28)/7);
 h+='<p class="meta">Лишилось тем: <b>'+left+'</b> із '+tot+'. Щоб останні 4 тижні лишити під пробні НМТ, потрібно ≈ <b>'+need.toFixed(1)+'</b> тем/тиждень; зараз ≈ <b>'+pace.toFixed(1)+'</b> '+(pace>=need?'✅':'⚠️ відстаєш')+'</p>';
@@ -273,25 +244,7 @@ h+='<div class="rv" style="--c:'+META[o.s].color+'"><a href="#r-'+o.s+'-'+o.i+'"
 +'<button type="button" onclick="reviewTopic(\''+o.s+'\','+o.i+',0)">Забув</button></div>';
 });
 if(due.length>5) h+='<p class="meta">…і ще '+(due.length-5)+' у черзі</p>';
-var ue=(STATE.errs||[]).filter(function(e){ return !e.fx; }).length;
-if(ue) h+='<p class="meta">✍️ Нерозібраних помилок: '+ue+' — перерішай їх у журналі нижче.</p>';
 return h+'</div></div>';
-}
-
-function errHTML(){
-var errs=(STATE.errs||[]).slice().sort(function(a,b){ return ((a.fx?1:0)-(b.fx?1:0))||((b.ts||0)-(a.ts||0)); });
-var open=errs.filter(function(e){ return !e.fx; }).length;
-var h='<details class="card blk" id="errBox"'+(UI.eo?' open':'')+' ontoggle="UI.eo=this.open"><summary>📓 Журнал помилок ('+open+' відкритих)</summary>';
-h+='<form class="errf" onsubmit="return addErr(event)"><select id="errS">'+ORDER.map(function(s){ return '<option value="'+s+'">'+META[s].name+'</option>'; }).join('')+'</select>'
-+'<input id="errT" placeholder="Що вийшло не так і яке правило забув?" maxlength="300" required><button type="submit">Додати</button></form>';
-errs.forEach(function(e){
-var id=+e.id||0;
-h+='<div class="er'+(e.fx?' fx':'')+'"><span>'+(ICON[e.s]||'')+' '+esc(e.t)+' <i>'+esc(isoDay(e.ts||0))+'</i></span>'
-+'<button type="button" onclick="fixErr('+id+')">'+(e.fx?'↩︎':'Перерішав ✓')+'</button>'
-+'<button type="button" class="chip-x" title="Видалити" onclick="delErr('+id+')">✕</button></div>';
-});
-if(!errs.length) h+='<p class="meta">Записуй кожну помилку з пробників. Через кілька днів перерішай її без підглядання — і познач «Перерішав».</p>';
-return h+'</details>';
 }
 
 function toolbarHTML(){
@@ -308,6 +261,7 @@ var ds=document.querySelectorAll('.rhythm .day'), wd=(new Date().getDay()+6)%7;
 if(ds[wd]) ds[wd].classList.add('today');
 applyFilter();
 enterAnim();
+postRender();
 }
 
 function trendHTML(m,color){
@@ -389,14 +343,13 @@ var best=null;
 ORDER.forEach(function(s){ var fi=firstOpen(s); if(fi<0) return; var dn=0; for(var k=0;k<TID[s].length;k++){ var d=ST(s,k); if(d&&d.done) dn++; } var r=dn/TID[s].length; if(!best||r<best.r) best={s:s,i:fi,r:r}; });
 if(best) nxt=best;
 }
-var weak=weakList(), ue=(STATE.errs||[]).filter(function(e){ return !e.fx; }).length, m=null;
+var weak=weakList(), m=null;
 function tl(o){ return ICON[o.s]+' '+esc(TOPICS[o.s][o.i]); }
-if(dl>0&&dl<=28) m={k:'📝 Повний пробник НМТ',t:'Пройди варіант на час',href:'#sub-math',s:'До НМТ '+dl+' дн. — тепер головне пробники й розбір помилок.'};
+if(dl>0&&dl<=28) m={k:'📝 Повний пробник НМТ',t:'Пройди варіант на час',href:'#sub-math',s:'До НМТ '+dl+' дн. — тепер головне — повні пробники й повторення слабких тем.'};
 else if(due.length) m={k:'🔁 Повтори (≈10 хв)',t:tl(due[0]),href:'#r-'+due[0].s+'-'+due[0].i,s:'Спершу згадай без підглядання, потім відповідай чесно. У черзі: '+due.length+'.'};
 else if(weak.length) m={k:'🔴 Закріпи слабку тему',t:tl(weak[0]),href:'#r-'+weak[0].s+'-'+weak[0].i,s:'Перерішай 10–15 завдань, потім онови «тест %».'};
-else if(ue) m={k:'📓 Розбери помилки',t:'Нерозібраних: '+ue,href:'#errBox',s:'Перерішай їх без підглядання і познач «Перерішав».'};
 else if(nxt) m={k:'🆕 Нова тема',t:tl(nxt),href:'#r-'+nxt.s+'-'+nxt.i,s:'≈'+META[nxt.s].time+'. Після теми зроби тест і впиши %.'};
-else m={k:'🏁 Усі теми пройдено',t:'Роби повні пробники',href:'#sub-math',s:'Далі — пробні НМТ і розбір помилок.'};
+else m={k:'🏁 Усі теми пройдено',t:'Роби повні пробники',href:'#sub-math',s:'Далі — повні пробні НМТ і повторення.'};
 var h='<div class="card now"><div class="now-k">▶ Що робити зараз</div><a class="now-t" href="'+m.href+'"><b>'+m.k+':</b> '+m.t+'</a><p class="meta">'+m.s+'</p>';
 if(nxt&&m.k.indexOf('Нова')<0) h+='<p class="meta now-n">Далі нова тема: <a href="#r-'+nxt.s+'-'+nxt.i+'">'+tl(nxt)+'</a></p>';
 return h+'</div>';
@@ -408,6 +361,7 @@ var p=pctOf(d);
 return '<span class="cnt-label">тест %:</span><input class="pc" type="number" inputmode="numeric" min="0" max="100" value="'+(p===null?'':p)+'" aria-label="Результат тесту з теми, відсотків" title="≥80 → 🟢, 50–79 → 🟡, <50 → 🔴 (слабкі теми повторюються частіше)" onchange="pctChange(\''+subj+'\','+i+',this.value)">';
 }
 function pctChange(subj,i,val){
+LAST_ROW={id:'r-'+subj+'-'+i,kind:'conf'};
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][TID[subj][i]]||{}, n=Date.now();
 if(String(val).trim()===''){ delete cur.pct; cur.upd=n; STATE[subj][TID[subj][i]]=cur; render(); persist(); return; }
@@ -461,10 +415,43 @@ applyTheme();
 if('serviceWorker' in navigator) window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 
 // Анімація входу лише при першому показі (render() перебудовує DOM, тож без цього вона б повторювалась при кожному кліку)
-var ENTERED=false;
+var ENTERED=false, LAST_ROW=null, PREV_BARS=null;
+// Анімація входу — лише при першому показі. Якщо сторінку перемальовано ще під час входу (наприклад, прийшла хмара), клас знімаємо, щоб блоки не мигали вдруге.
 function enterAnim(){
-if(ENTERED) return; ENTERED=true;
-var b=document.body; b.classList.add('enter');
-setTimeout(function(){ b.classList.remove('enter'); },1400);
+var b=document.body;
+if(!ENTERED){ ENTERED=true; b.classList.add('enter'); setTimeout(function(){ b.classList.remove('enter'); },1400); }
+else b.classList.remove('enter');
 }
-
+// Після кожного перемальовування: смужки прогресу плавно їдуть від старого значення до нового, а анімація «галочки/крапки» грає лише на темі, яку ви щойно змінили.
+function postRender(){
+var bars=[].slice.call(document.querySelectorAll('#app .bar i')), now=bars.map(function(b){ return parseFloat(b.style.width)||0; });
+if(PREV_BARS&&PREV_BARS.length===now.length&&!document.body.classList.contains('enter')){
+bars.forEach(function(b,k){
+var p=PREV_BARS[k], n=now[k];
+if(p!==n&&n>0){
+b.style.transition='none'; b.style.transform='scaleX('+(p/n)+')';
+void b.offsetWidth;
+b.style.transition='transform .6s cubic-bezier(.22,.8,.3,1)'; b.style.transform='';
+}
+});
+}
+PREV_BARS=now;
+if(LAST_ROW){
+var r=document.getElementById(LAST_ROW.id);
+if(r){
+if(LAST_ROW.kind==='done'){ var cb=r.querySelector('input[type=checkbox]'); if(cb&&cb.checked) cb.classList.add('pop'); }
+else { var cf=r.querySelector('.conf'); if(cf) cf.classList.add('pulse'); }
+}
+LAST_ROW=null;
+}
+}
+// Хмарна панель: на комп'ютері відкривається при наведенні, на телефоні — по тапу.
+function cloudToggle(ev){
+ev.stopPropagation(); UI.co=!UI.co;
+var c=document.getElementById('cloud'); if(c) c.classList.toggle('open',UI.co);
+}
+document.addEventListener('click',function(e){
+if(UI.co&&!(e.target.closest&&e.target.closest('#cloud'))){
+UI.co=false; var c=document.getElementById('cloud'); if(c) c.classList.remove('open');
+}
+});

@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<meta name="description" content="Тренажер підготовки до НМТ: теми, повторення, пробники на час, журнал помилок"><meta name="theme-color" content="#3B5BDB"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="ext.css">
+<meta name="description" content="Тренажер підготовки до НМТ: теми, повторення, пробні тести, прогрес"><meta name="theme-color" content="#3B5BDB"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="ext.css">
 </head><body><div id="app">Завантаження…</div><script src="ext.js"></script><script>
 var FIREBASE_CONFIG = {
 apiKey: "AIzaSyAynY9aCL3XZMsNlmzyXsn5k59bfqEYjvA",
@@ -395,16 +395,18 @@ return ":root{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;--card:#F1
 }
 
 function syncBarHTML(){
+var code=db?getSyncCode():'';
+var chip=db?(code?'☁️ '+esc(code):'☁️ не підключено'):'☁️ вимкнено';
+var h='<div class="cloud'+(UI.co?' open':'')+'" id="cloud"><button type="button" class="cloud-b" onclick="cloudToggle(event)" aria-label="Хмарна синхронізація" title="Хмарна синхронізація">'+chip+'</button><div class="cloud-p"><div class="cloud-pi sync">';
 if(!db){
-return '<div class="sync"><span class="meta" style="padding-left:0">☁️ Хмарна синхронізація вимкнена. Щоб прогрес бачило на всіх пристроях — впиши свій Firebase-конфіг у файл (див. FIREBASE_CONFIG на початку коду). Без цього прогрес зберігається лише в пам\'яті цього браузера.</span></div>';
-}
-var code=getSyncCode();
-return '<div class="sync">'
-+'<input id="syncCodeInput" placeholder="код синхронізації" value="'+esc(code)+'">'
+h+='<span class="meta" style="padding-left:0">☁️ Хмарна синхронізація вимкнена. Щоб прогрес бачило на всіх пристроях — впиши свій Firebase-конфіг у файл (див. FIREBASE_CONFIG на початку коду). Без цього прогрес зберігається лише в пам\'яті цього браузера.</span>';
+} else {
+h+='<input id="syncCodeInput" placeholder="код синхронізації" value="'+esc(code)+'">'
 +'<button type="button" onclick="applySyncCode()">Підключити</button>'
 +'<button type="button" onclick="genSyncCode()">Створити новий код</button>'
-+'<span id="syncStatusMsg" class="meta" style="padding-left:0">'+(code?'Код активний: '+esc(code):'Введи код на іншому пристрої, щоб з\'єднати прогрес')+'</span>'
-+'</div>';
++'<span id="syncStatusMsg" class="meta" style="padding-left:0">'+(code?'Код активний: '+esc(code):'Введи код на іншому пристрої, щоб з\'єднати прогрес')+'</span>';
+}
+return h+'</div></div></div>';
 }
 
 function render(){
@@ -416,7 +418,7 @@ list.forEach(function(_,i){ var e=st[TID[subj][i]]; if(e&&e.done) done++; });
 overallDone+=done; overallTotal+=list.length;
 var pct=Math.round(done/list.length*100);
 subjHtml+='<div class="subject" id="sub-'+subj+'" style="--c:'+m.color+'">';
-var SUBJ_ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'🇬🇧'};
+var SUBJ_ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'💬'};
 subjHtml+='<h2>'+SUBJ_ICON[subj]+' '+m.name+'</h2>';
 subjHtml+='<p class="meta">'+done+'/'+list.length+' · ≈'+m.time+'</p>';
 subjHtml+='<div class="bar"><i style="width:'+pct+'%"></i></div>';
@@ -458,8 +460,7 @@ subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+'<span class="cnt-label">завдань:</span>'
-+'<input class="cnt" type="number" min="0" max="999" value="'+esc(d.count||'')+'" onchange="countChange(\''+subj+'\','+i+',this.value)">'+pctInput(subj,i,d)
++pctInput(subj,i,d)
 +'</div>'
 +'</div>';
 return;
@@ -510,8 +511,7 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+'<span class="cnt-label">завдань:</span>'
-+'<input class="cnt" type="number" min="0" max="999" value="'+esc(d.count||'')+'" onchange="countChange(\''+subj+'\','+i+',this.value)">'+pctInput(subj,i,d)
++pctInput(subj,i,d)
 +'</div>'
 +'</div>';
 });
@@ -520,7 +520,7 @@ subjHtml+='</div>';
 });
 subjHtml='<div class="subjects-grid">'+subjHtml+'</div>';
 var overallPct=Math.round(overallDone/overallTotal*100);
-var html='<div class="wrap"><h1>Тренажер підготовки до НМТ</h1>'
+var html='<div class="wrap">'+syncBarHTML()+'<h1>Тренажер підготовки до НМТ</h1>'
 +'<p class="intro">Онови позначки після кожного заняття.</p>'
 +nowHTML()+rhythmHTML()
 +'<details class="legend-d"><summary>Умовні позначки</summary><ul class="legend">'
@@ -532,8 +532,7 @@ var html='<div class="wrap"><h1>Тренажер підготовки до НМ�
 +'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → без оцінки → знову 🟢). Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details>'
 +dashHTML()+weakHTML()
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div>'+navHTML()+'</div>'
-+syncBarHTML()
-+errHTML()+archiveHTML()+toolbarHTML()
++toolbarHTML()
 +subjHtml+'</div>';
 document.getElementById('app').innerHTML=html;
 afterRender();
