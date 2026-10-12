@@ -59,7 +59,7 @@ if(s==='math') V2_MATH.forEach(function(n){ r[s+'-'+pad4(n)]=1; });
 else for(i=0;i<V2_COUNT[s];i++) r[s+'-'+pad4(i)]=1;
 return r;
 }
-function hasData(e){ return !!(e&&(e.done||e.note||e.conf||e.count||e.rv>0||e.date)); }
+function hasData(e){ return !!(e&&(e.done||e.skip||e.note||e.conf||e.count||e.rv>0||e.date)); }
 function toArchive(o,s,id,e,into){
 var c=clone(e); c.title=OLD_T[id]||DROPPED[id]||c.title||''; if(into) c.into=into;
 (o.archive[s]=o.archive[s]||{})[id]=c;
@@ -183,7 +183,7 @@ return o;
 function toggle(subj,i){
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][TID[subj][i]]||{}, n=Date.now();
-cur.done=!cur.done; cur.upd=n;
+cur.done=!cur.done; cur.upd=n; if(cur.done) delete cur.skip;
 if(cur.done){ cur.date=todayStr(); cur.ts=n; cur.last=n; cur.rv=0; bump(); }
 else { cur.date=''; delete cur.ts; delete cur.last; cur.rv=0; }
 STATE[subj][TID[subj][i]]=cur;
@@ -233,7 +233,8 @@ function dashHTML(){
 var n=Date.now(), ex=(STATE.cfg&&STATE.cfg.exam)||'', left=0, tot=0, recent=0, h='';
 ORDER.forEach(function(s){
 TOPICS[s].forEach(function(_,i){
-tot++; var d=ST(s,i);
+var d=ST(s,i); if(isSkip(d)) return;
+tot++;
 if(d&&d.done){ if(n-doneTs(d)<14*DAY) recent++; } else left++;
 });
 });
@@ -256,7 +257,7 @@ h+='<div class="card"><h3>📅 Сьогодні <span class="pill">🔥 сері
 if(!subs.length) h+='<p class="meta">Неділя: повторення, помилки, легкий тест.</p>';
 subs.forEach(function(s){
 var nx=[];
-for(var i=0;i<TOPICS[s].length&&nx.length<2;i++){ if(!(ST(s,i)&&ST(s,i).done)) nx.push(i); }
+for(var i=0;i<TOPICS[s].length&&nx.length<2;i++){ if(!(ST(s,i)&&ST(s,i).done)&&!isSkip(ST(s,i))) nx.push(i); }
 h+='<div class="tl" style="--c:'+META[s].color+'"><b>'+ICON[s]+' '+META[s].name+'</b>'+(nx.length?'':'<span>усе пройдено 🎉</span>');
 nx.forEach(function(i){ h+='<a href="#r-'+s+'-'+i+'">'+esc(TOPICS[s][i])+'</a>'; });
 h+='</div>';
@@ -382,11 +383,11 @@ var due=[];
 ORDER.forEach(function(s){ for(var k=0;k<TID[s].length;k++){ var x=dueIn(ST(s,k)); if(x!==null&&x<=0) due.push({s:s,i:k,x:x}); } });
 due.sort(function(a,b){ return a.x-b.x; });
 var wd=(new Date().getDay()+6)%7, subs=(SCHED[wd]||[]).slice(), nxt=null;
-function firstOpen(s){ for(var i=0;i<TID[s].length;i++){ var d=ST(s,i); if(!(d&&d.done)) return i; } return -1; }
+function firstOpen(s){ for(var i=0;i<TID[s].length;i++){ var d=ST(s,i); if(!(d&&d.done)&&!isSkip(d)) return i; } return -1; }
 for(var a=0;a<subs.length&&!nxt;a++){ var fi=firstOpen(subs[a]); if(fi>-1) nxt={s:subs[a],i:fi}; }
 if(!nxt){
 var best=null;
-ORDER.forEach(function(s){ var fi=firstOpen(s); if(fi<0) return; var dn=0; for(var k=0;k<TID[s].length;k++){ var d=ST(s,k); if(d&&d.done) dn++; } var r=dn/TID[s].length; if(!best||r<best.r) best={s:s,i:fi,r:r}; });
+ORDER.forEach(function(s){ var fi=firstOpen(s); if(fi<0) return; var dn=0, sk=0; for(var k=0;k<TID[s].length;k++){ var d=ST(s,k); if(d&&d.done) dn++; else if(isSkip(d)) sk++; } var r=dn/(TID[s].length-sk); if(!best||r<best.r) best={s:s,i:fi,r:r}; });
 if(best) nxt=best;
 }
 var weak=weakList(), ue=(STATE.errs||[]).filter(function(e){ return !e.fx; }).length, m=null;
@@ -453,8 +454,8 @@ applyTheme(); render();
 }
 function navHTML(){
 return '<nav class="subnav" aria-label="Предмети">'+ORDER.map(function(s){
-var dn=0, t=TID[s].length; for(var i=0;i<t;i++){ var d=ST(s,i); if(d&&d.done) dn++; }
-return '<a href="#sub-'+s+'" style="--c:'+META[s].color+'" title="'+META[s].name+'">'+ICON[s]+' '+Math.round(dn/t*100)+'%</a>';
+var dn=0, t=TID[s].length; for(var i=0;i<TID[s].length;i++){ var d=ST(s,i); if(d&&d.done) dn++; else if(isSkip(d)) t--; }
+return '<a href="#sub-'+s+'" style="--c:'+META[s].color+'" title="'+META[s].name+'">'+ICON[s]+' '+(t?Math.round(dn/t*100):100)+'%</a>';
 }).join('')+'<button type="button" class="thm" onclick="cycleTheme()" aria-label="Тема оформлення: '+THEME_NM[getTheme()]+'" title="Тема: '+THEME_NM[getTheme()]+'">'+THEME_IC[getTheme()]+'</button></nav>';
 }
 applyTheme();
@@ -466,4 +467,21 @@ function enterAnim(){
 if(ENTERED) return; ENTERED=true;
 var b=document.body; b.classList.add('enter');
 setTimeout(function(){ b.classList.remove('enter'); },1400);
+}
+
+// ---- Пропуск тем: лише для ще не виконаних ----
+function isSkip(d){ return !!(d&&d.skip&&!d.done); }
+function skipBtn(subj,i,d){
+if(d&&d.done) return '';
+var on=isSkip(d);
+return '<button type="button" class="skp'+(on?' on':'')+'" onclick="skipTopic(\''+subj+'\','+i+')" aria-label="'+(on?'Повернути тему':'Пропустити тему')+'" title="'+(on?'Повернути тему в план':'Пропустити тему (не рахується в прогресі)')+'">'+(on?'↩':'⏭')+'</button>';
+}
+function skipTopic(subj,i){
+STATE[subj]=STATE[subj]||{};
+var cur=STATE[subj][TID[subj][i]]||{};
+if(cur.done) return;
+if(cur.skip) delete cur.skip; else cur.skip=true;
+cur.upd=Date.now();
+STATE[subj][TID[subj][i]]=cur;
+render(); persist();
 }

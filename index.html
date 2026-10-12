@@ -424,13 +424,15 @@ var overallDone=0, overallTotal=0, subjHtml='';
 ORDER.forEach(function(subj){
 var m=META[subj], list=TOPICS[subj], st=STATE[subj]||{};
 var done=0;
-list.forEach(function(_,i){ var e=st[TID[subj][i]]; if(e&&e.done) done++; });
-overallDone+=done; overallTotal+=list.length;
-var pct=Math.round(done/list.length*100);
+var sk=0;
+list.forEach(function(_,i){ var e=st[TID[subj][i]]; if(e&&e.done) done++; else if(isSkip(e)) sk++; });
+var total=list.length-sk;
+overallDone+=done; overallTotal+=total;
+var pct=total?Math.round(done/total*100):100;
 subjHtml+='<div class="subject" id="sub-'+subj+'" style="--c:'+m.color+'">';
 var SUBJ_ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'🇬🇧'};
 subjHtml+='<h2>'+SUBJ_ICON[subj]+' '+m.name+'</h2>';
-subjHtml+='<p class="meta">'+done+'/'+list.length+' · ≈'+m.time+'</p>';
+subjHtml+='<p class="meta">'+done+'/'+total+(sk?' (пропущено '+sk+')':'')+' · ≈'+m.time+'</p>';
 subjHtml+='<div class="bar"><i style="width:'+pct+'%"></i></div>';
 var mocks=STATE.mockLog[subj]||[];
 subjHtml+='<div class="mock"><h3>Пробні тести</h3><form onsubmit="return addMock(event,\''+subj+'\')"><input type="number" min="0" max="200" placeholder="бал" required id="mi-'+subj+'"><button type="submit">Додати</button></form>';
@@ -460,14 +462,14 @@ if(subj==='math'&&FINAL_ROWS[i]){
 var chips=finalLinks(i).map(function(l){
 return '<a class="fin-chip" href="'+l.url+'" target="_blank" rel="noopener">🔢 '+esc(l.label)+'</a>';
 }).join('');
-subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'">'
+subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+(isSkip(d)?' skipped':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+((d.done||isSkip(d))?1:0)+'">'
 +'<div class="row-main">'
 +'<input type="checkbox" aria-label="Тема виконана" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
-+'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+'</span>'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+'</span>'+skipBtn(subj,i,d)
 +'</div>'
 +'<div class="fin-chips">'+chips+'</div>'
 +'<div class="row-sub">'
-+'<span class="date">'+(d.date||'')+'</span>'
++'<span class="date">'+(isSkip(d)?'пропущено':(d.date||''))+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
 +'<span class="cnt-label">завдань:</span>'
 +'<input class="cnt" type="number" min="0" max="999" value="'+esc(d.count||'')+'" onchange="countChange(\''+subj+'\','+i+',this.value)">'+pctInput(subj,i,d)
@@ -510,14 +512,14 @@ var vidHtml='<a class="lnk'+(vidSecondary?' lnk-secondary':'')+'" href="'+videoU
 linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
 +(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>');
 }
-subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'">'
+subjHtml+='<div class="row'+(isDue(d)?' due':'')+(isSkip(d)?' skipped':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+((d.done||isSkip(d))?1:0)+'">'
 +'<div class="row-main">'
 +'<input type="checkbox" aria-label="Тема виконана" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
 +'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>'+esc(title)+'</span>'
-+linksHtml
++linksHtml+skipBtn(subj,i,d)
 +'</div>'
 +'<div class="row-sub">'
-+'<span class="date">'+(d.date||'')+'</span>'
++'<span class="date">'+(isSkip(d)?'пропущено':(d.date||''))+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
 +'<span class="cnt-label">завдань:</span>'
 +'<input class="cnt" type="number" min="0" max="999" value="'+esc(d.count||'')+'" onchange="countChange(\''+subj+'\','+i+',this.value)">'+pctInput(subj,i,d)
@@ -528,7 +530,7 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 subjHtml+='</div>';
 });
 subjHtml='<div class="subjects-grid">'+subjHtml+'</div>';
-var overallPct=Math.round(overallDone/overallTotal*100);
+var overallPct=(overallTotal?Math.round(overallDone/overallTotal*100):100);
 var html='<div class="wrap"><h1>Тренажер підготовки до НМТ</h1>'
 +'<p class="intro">Онови позначки після кожного заняття.</p>'
 +nowHTML()+rhythmHTML()
@@ -539,7 +541,7 @@ var html='<div class="wrap"><h1>Тренажер підготовки до НМ�
 +'<li><span class="ic">🔢</span> тестування-пробник НМТ з osvita.ua (укр. мова, історія, англійська)</li>'
 +'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
 +'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
-+'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → знову 🟢). Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details>'
++'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → знову 🟢).</li><li>⏭ — пропустити тему (кнопка є лише в ще не вивчених). Пропущені не рахуються в прогресі й не пропонуються; ↩ повертає тему. Коли тему виконано, пропустити її вже не можна. Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details>'
 +dashHTML()+weakHTML()
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div>'+navHTML()+'</div>'
 +syncBarHTML()
