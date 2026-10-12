@@ -134,11 +134,3 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 .enter .bar i{animation:grow .9s var(--ease) .35s both}
 @media(prefers-reduced-motion:reduce){.enter *,.row:target::before{animation:none!important}}
 
-/* пропуск тем */
-#app .skp{margin-left:auto;flex-shrink:0;border:1px solid var(--line);background:transparent;color:var(--sub);border-radius:8px;min-width:30px;min-height:30px;font-size:.85rem;cursor:pointer;transition:transform .15s var(--ease),background .15s}
-#app .skp:hover{background:var(--card)}
-#app .skp:active{transform:scale(.9)}
-#app .skp.on{color:var(--ink);background:var(--card)}
-#app .row.skipped .t{opacity:.5;text-decoration:line-through;text-decoration-style:dashed;text-decoration-color:var(--sub)}
-#app .row.skipped .lnk{opacity:.45}
-#app .row.skipped .date{font-style:italic}
