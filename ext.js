@@ -262,7 +262,14 @@ for(var i=0;i<rows.length;i++) rows[i].style.display=(!q||rows[i].getAttribute('
 }
 function afterRender(){
 var ds=document.querySelectorAll('.rhythm .day'), wd=(new Date().getDay()+6)%7;
-if(ds[wd]) ds[wd].classList.add('today');
+if(ds[wd]){
+ds[wd].classList.add('today');
+var sb=WEEK[wd], k1=sb.length?META[sb[0]].color:'#9a9da3', k2=sb.length>1?META[sb[1]].color:k1, st=ds[wd].style;
+st.setProperty('--c',k1); st.setProperty('--c2',k2);
+st.border='1.5px solid transparent';
+st.background='linear-gradient(var(--card2),var(--card2)) padding-box,linear-gradient(90deg,'+k1+','+k2+') border-box';
+st.boxShadow='0 0 0 2px '+k1+'44';
+}
 applyFilter();
 enterAnim();
 postRender();
