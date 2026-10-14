@@ -1,5 +1,5 @@
 // Мережа першою (щоб оновлення з GitHub з'являлися одразу), кеш — запасний варіант без інтернету.
-var C='nmt-v4';
+var C='nmt-v5';
 self.addEventListener('install',function(e){
 self.skipWaiting();
 e.waitUntil(caches.open(C).then(function(c){ return c.addAll(['./','index.html','ext.js','ext.css','icon.svg']); }).catch(function(){}));

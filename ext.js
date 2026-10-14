@@ -8,7 +8,8 @@ function rhythmHTML(){
 return '<div class="rhythm">'+WEEK.map(function(subs,i){
 var ttl=subs.length?subs.map(function(s){ return META[s].name; }).join(', '):'Повторення';
 var dots=subs.length?subs.map(function(s){ return '<i class="dot" style="background:'+META[s].color+'"></i>'; }).join(''):'<i class="dot" style="background:#9a9da3"></i>';
-return '<div class="day" title="'+ttl+'"><span>'+WEEKD[i]+'</span><div class="dots">'+dots+'</div></div>';
+var c1=subs.length?META[subs[0]].color:'#9a9da3', c2=subs.length>1?META[subs[1]].color:c1;
+return '<div class="day" title="'+ttl+'" style="--c:'+c1+';--c2:'+c2+'"><span>'+WEEKD[i]+'</span><div class="dots">'+dots+'</div></div>';
 }).join('')+'</div>';
 }
 var ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'💬'};

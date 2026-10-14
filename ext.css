@@ -35,7 +35,7 @@
 .row.due{box-shadow:inset 3px 0 0 #F59F00}
 .row.due .t::after{content:' 🔁'}
 .hd .row[data-d="1"]{display:none}
-.rhythm .day.today{border-color:#3B5BDB;box-shadow:0 0 0 2px rgba(59,91,219,.25)}
+.rhythm .day.today{background:linear-gradient(var(--card2),var(--card2)) padding-box,linear-gradient(90deg,var(--c),var(--c2)) border-box;border:1.5px solid transparent;box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 28%,transparent)}
 .trend{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:.74rem;color:var(--sub)}
 .filebtn{font-size:.76rem;padding:7px 11px;border-radius:8px;background:#3B5BDB;color:#fff;font-weight:600;cursor:pointer}
 
