@@ -29,7 +29,7 @@ function dueIn(d){
 if(!d||!d.done) return null;
 var l=lastTs(d); if(!l) return null;
 var iv=REV[Math.min(d.rv||0,REV.length-1)];
-if(d.conf===1) iv=Math.max(1,Math.ceil(iv/2));
+if(confOf(d)===1) iv=Math.max(1,Math.ceil(iv/2));
 return Math.ceil((l+iv*DAY-Date.now())/DAY);
 }
 function isDue(d){ var x=dueIn(d); return x!==null&&x<=0; }
@@ -181,17 +181,20 @@ function cycleConf(subj,i){
 LAST_ROW={id:'r-'+subj+'-'+i,kind:'conf'};
 STATE[subj]=STATE[subj]||{};
 var cur=STATE[subj][TID[subj][i]]||{};
+if(pctOf(cur)!==null){ render(); return; } // впевненість рахується з «тест %»
 cur.conf=({0:3,3:2,2:1,1:0})[cur.conf||0]; cur.upd=Date.now();
 STATE[subj][TID[subj][i]]=cur;
 render(); persist();
 }
 function confBtn(subj,i,d){
-return '<button type="button" class="conf c'+(d.conf||0)+'" title="Впевненість у темі (клік змінює): 🟢 добре · 🟡 так собі · 🔴 слабо · без оцінки" aria-label="Впевненість: '+['не оцінено','слабко','так собі','добре'][d.conf||0]+'" onclick="cycleConf(\''+subj+'\','+i+')"></button>';
+var c=confOf(d), au=pctOf(d)!==null;
+return '<button type="button" class="conf c'+c+(au?' auto':'')+'" title="'+(au?'Впевненість рахується автоматично з «тест %»: ≥80 → 🟢, 50–79 → 🟡, <50 → 🔴':'Впевненість у темі (клік змінює): 🟢 добре · 🟡 так собі · 🔴 слабо · без оцінки')+'" aria-label="Впевненість: '+['не оцінено','слабко','так собі','добре'][c]+'" onclick="cycleConf(\''+subj+'\','+i+')"></button>';
 }
 function reviewTopic(subj,i,ok){
 var cur=(STATE[subj]||{})[TID[subj][i]]; if(!cur) return;
 var n=Date.now();
-if(ok){ cur.rv=(cur.rv||0)+1; if(cur.conf===1) cur.conf=2; } else { cur.rv=0; cur.conf=1; }
+var auto=pctOf(cur)!==null; // з «тест %» впевненість змінюється лише новим результатом тесту
+if(ok){ cur.rv=(cur.rv||0)+1; if(!auto&&cur.conf===1) cur.conf=2; } else { cur.rv=0; if(!auto) cur.conf=1; }
 cur.last=n; cur.upd=n; bump();
 render(); persist();
 }
@@ -302,20 +305,28 @@ STATE.mockLog[subj].push({date:todayStr(),score:val});
 STATE.lupd=Date.now(); bump();
 }
 // ---- Слабкі теми і що робити зараз ----
-function pctOf(d){ return (d&&d.pct!==undefined&&d.pct!==''&&d.pct!==null)?+d.pct:null; }
+function pctOf(d){ if(!d||d.pct===undefined||d.pct===''||d.pct===null) return null; var v=+d.pct; return isNaN(v)?null:v; }
+// Впевненість: якщо є «тест %» — вона завжди рахується з нього (≥80 🟢, 50–79 🟡, <50 🔴); без нього — ручна оцінка.
+function confOf(d){ var p=pctOf(d); if(p!==null) return p>=80?3:p>=50?2:1; return (d&&d.conf)||0; }
+// Слабкі: спершу теми з найнижчим «тест %», далі слабкі без результату тесту.
 function weakList(){
 var out=[];
 ORDER.forEach(function(s){
 for(var i=0;i<TID[s].length;i++){
 var d=ST(s,i), p=pctOf(d);
-if(d&&d.done&&(d.conf===1||(p!==null&&p<50))) out.push({s:s,i:i,p:p});
+if(d&&((p!==null&&p<50)||(d.done&&p===null&&d.conf===1))) out.push({s:s,i:i,p:p});
 }
 });
-out.sort(function(a,b){ return (a.p===null?50:a.p)-(b.p===null?50:b.p); });
+out.sort(function(a,b){
+if(a.p===null&&b.p===null) return 0;
+if(a.p===null) return 1;
+if(b.p===null) return -1;
+return a.p-b.p;
+});
 return out;
 }
 function unrated(){
-var n=0; ORDER.forEach(function(s){ for(var i=0;i<TID[s].length;i++){ var d=ST(s,i); if(d&&d.done&&!d.conf) n++; } });
+var n=0; ORDER.forEach(function(s){ for(var i=0;i<TID[s].length;i++){ var d=ST(s,i); if(d&&d.done&&!confOf(d)) n++; } });
 return n;
 }
 function weakHTML(){
@@ -351,6 +362,7 @@ else if(weak.length) m={k:'🔴 Закріпи слабку тему',t:tl(weak[
 else if(nxt) m={k:'🆕 Нова тема',t:tl(nxt),href:'#r-'+nxt.s+'-'+nxt.i,s:'≈'+META[nxt.s].time+'. Після теми зроби тест і впиши %.'};
 else m={k:'🏁 Усі теми пройдено',t:'Роби повні пробники',href:'#sub-math',s:'Далі — повні пробні НМТ і повторення.'};
 var h='<div class="card now"><div class="now-k">▶ Що робити зараз</div><a class="now-t" href="'+m.href+'"><b>'+m.k+':</b> '+m.t+'</a><p class="meta">'+m.s+'</p>';
+if(weak.length&&weak[0].p!==null&&m.k.indexOf('слабку')<0) h+='<p class="meta now-n">Найслабша за тестом: <a href="#r-'+weak[0].s+'-'+weak[0].i+'">'+tl(weak[0])+'</a> — '+weak[0].p+'%</p>';
 if(nxt&&m.k.indexOf('Нова')<0) h+='<p class="meta now-n">Далі нова тема: <a href="#r-'+nxt.s+'-'+nxt.i+'">'+tl(nxt)+'</a></p>';
 return h+'</div>';
 }

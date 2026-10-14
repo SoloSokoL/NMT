@@ -146,3 +146,5 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 .cloud:hover .cloud-p,.cloud:focus-within .cloud-p,.cloud.open .cloud-p{visibility:visible;opacity:1;transform:none}
 .cloud-pi.sync{margin:0;background:var(--card2);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px}
 @media(prefers-reduced-motion:reduce){.cloud-p,.cloud-b{transition:none}}
+
+.conf.auto{cursor:default}
