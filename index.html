@@ -24,12 +24,24 @@ db=firebase.firestore();
 }
 function getSyncCode(){ try{ return localStorage.getItem('nmt-sync-code')||''; }catch(e){ return ''; } }
 function setSyncCodeLS(code){ try{ localStorage.setItem('nmt-sync-code', code); }catch(e){} }
+var _cs=null;
 function cloudSave(){
 if(!db) return;
-var code=getSyncCode();
-if(!code) return;
-db.collection('nmt-tracker').doc(code).set(STATE).catch(function(){});
+var code=getSyncCode(); if(!code) return;
+clearTimeout(_cs);
+_cs=setTimeout(function(){ _cs=null; cloudPush(code); },700);
 }
+// Перед записом читає хмарний документ і зливає його з локальним (mergeState), щоб запис з одного пристрою не затирав зміни з іншого.
+// Firestore не приймає undefined, тому дані проходять через JSON.
+function cloudPush(code){
+var ref=db.collection('nmt-tracker').doc(code);
+ref.get().then(function(snap){
+var out=STATE;
+if(snap.exists){ try{ out=mergeState(STATE,snap.data()); }catch(e){ out=STATE; } }
+return ref.set(JSON.parse(JSON.stringify(out)));
+}).catch(function(){});
+}
+window.addEventListener('pagehide',function(){ if(_cs){ clearTimeout(_cs); _cs=null; var c=getSyncCode(); if(db&&c) cloudPush(c); } });
 function cloudLoad(code,cb){
 if(!db){ cb(null); return; }
 db.collection('nmt-tracker').doc(code).get().then(function(snap){
@@ -427,7 +439,7 @@ var mocks=STATE.mockLog[subj]||[];
 subjHtml+='<div class="mock"><h3>Пробні тести</h3><form onsubmit="return addMock(event,\''+subj+'\')"><input type="number" min="0" max="200" placeholder="бал" required id="mi-'+subj+'"><button type="submit">Додати</button></form>';
 if(mocks.length){
 subjHtml+='<div class="hist">';
-mocks.forEach(function(mk,mi){ subjHtml+='<span class="chip">'+mk.date+': '+mk.score+'<button type="button" class="chip-x" title="Видалити" onclick="removeMock(\''+subj+'\','+mi+')">✕</button></span>'; });
+mocks.forEach(function(mk,mi){ subjHtml+='<span class="chip">'+esc(mk.date)+': '+esc(mk.score)+(mk.errs!==undefined&&mk.errs!==null?' · ❌'+esc(mk.errs):'')+'<button type="button" class="chip-x" title="Видалити" onclick="removeMock(\''+subj+'\','+mi+')">✕</button></span>'; });
 subjHtml+='</div>';
 } else {
 subjHtml+='<p class="meta" style="padding-left:0">Ще немає записів</p>';
@@ -452,16 +464,16 @@ if(subj==='math'&&FINAL_ROWS[i]){
 var chips=finalLinks(i).map(function(l){
 return '<a class="fin-chip" href="'+l.url+'" target="_blank" rel="noopener">🔢 '+esc(l.label)+'</a>';
 }).join('');
-subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'">'
+subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'" data-w="'+wOf(TID[subj][i])+'">'
 +'<div class="row-main">'
 +'<input type="checkbox" aria-label="Тема виконана" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
-+'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+'</span>'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+wtTag(subj,i)+'</span>'
 +'</div>'
 +'<div class="fin-chips">'+chips+'</div>'
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+pctInput(subj,i,d)
++pctInput(subj,i,d)+wtBtn(subj,i)
 +'</div>'
 +'</div>';
 return;
@@ -503,16 +515,16 @@ var vidHtml='<a class="lnk'+(vidSecondary?' lnk-secondary':'')+'" href="'+videoU
 linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
 +(testUrl?'<a class="lnk" href="'+testUrl+'" target="_blank" rel="noopener" title="Тестування-пробник НМТ">🔢</a>':'<span class="lnk lnk-empty"></span>');
 }
-subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'">'
+subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'" data-w="'+wOf(TID[subj][i])+'">'
 +'<div class="row-main">'
 +'<input type="checkbox" aria-label="Тема виконана" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
-+'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>'+esc(title)+'</span>'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>'+esc(title)+wtTag(subj,i)+'</span>'
 +linksHtml
 +'</div>'
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+pctInput(subj,i,d)
++pctInput(subj,i,d)+wtBtn(subj,i)
 +'</div>'
 +'</div>';
 });
@@ -520,10 +532,11 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 subjHtml+='</div>';
 });
 subjHtml='<div class="subjects-grid">'+subjHtml+'</div>';
+var wkH=weekHTML();
 var overallPct=Math.round(overallDone/overallTotal*100);
 var html='<div class="wrap">'+syncBarHTML()+'<h1>Тренажер підготовки до НМТ</h1>'
 +'<p class="intro">Онови позначки після кожного заняття.</p>'
-+nowHTML()+rhythmHTML()
++nowHTML()+rhythmHTML()+qnavHTML()+(UI.wkAuto?wkH:'')
 +'<details class="legend-d"><summary>Умовні позначки</summary><ul class="legend">'
 +'<li><span class="ic">📖</span> стаття з теорією</li>'
 +'<li><span class="ic">▶️</span> відеоурок (пряме посилання або пошук на YouTube за назвою теми)</li>'
@@ -531,7 +544,7 @@ var html='<div class="wrap">'+syncBarHTML()+'<h1>Тренажер підгото
 +'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
 +'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
 +'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → без оцінки → знову 🟢). Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details>'
-+dashHTML()+weakHTML()
++dashHTML()+weakHTML()+errsHTML()+timerHTML()+(UI.wkAuto?'':wkH)+cardsHTML()+dynHTML()
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div>'+navHTML()+'</div>'
 +toolbarHTML()
 +subjHtml+'</div>';
@@ -559,18 +572,16 @@ ev.preventDefault();
 var inp=document.getElementById('mi-'+subj);
 var val=parseFloat(inp.value);
 if(isNaN(val)) return false;
-STATE.mockLog=STATE.mockLog||{};
-STATE.mockLog[subj]=STATE.mockLog[subj]||[];
-STATE.mockLog[subj].push({date:todayStr(),score:val});
-STATE.lupd=Date.now(); bump();
+logMock(subj,val);
 render();
 persist();
 return false;
 }
 
 function removeMock(subj,idx){
-if(!STATE.mockLog||!STATE.mockLog[subj]) return;
-STATE.mockLog[subj].splice(idx,1);
+var a=STATE.mockLog&&STATE.mockLog[subj]; if(!a||!a[idx]) return;
+var e=a.splice(idx,1)[0];
+STATE.del=STATE.del||{}; if(e&&e.id) STATE.del[e.id]=Date.now();
 STATE.lupd=Date.now();
 render();
 persist();
