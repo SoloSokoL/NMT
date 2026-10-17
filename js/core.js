@@ -136,6 +136,7 @@ return '<div class="tools"><input type="search" id="qIn" placeholder="🔎 По�
 }
 function applyFilter(){
 document.body.classList.toggle('hd',UI.hd);
+var sg=document.querySelector('.subjects-grid'); if(sg) var srch=!!((UI.q||'').trim()||UI.imp); sg.classList.toggle('all',srch); document.body.classList.toggle('srch',srch);
 var q=(UI.q||'').trim().toLowerCase(), rows=document.querySelectorAll('.row[data-t]'), any=false;
 for(var i=0;i<rows.length;i++){
 var r=rows[i], ok=(!q||r.getAttribute('data-t').indexOf(q)>-1)&&(!UI.imp||r.getAttribute('data-w')==='h');
@@ -157,7 +158,6 @@ st.boxShadow='0 0 0 2px '+k1+'44';
 applyFilter();
 enterAnim();
 postRender();
-tmNorm(); tmAfter();
 if(UI.ef.focus){ var fe=document.getElementById('ef-t'); if(fe) fe.focus(); UI.ef.focus=false; }
 }
 
@@ -251,12 +251,12 @@ if(best) nxt=best;
 var weak=weakList(), m=null;
 function tl(o){ return ICON[o.s]+' '+esc(TOPICS[o.s][o.i]); }
 if(eo.length) m={k:'📝 Прострочені помилки',t:esc(shorten(eo[0].t,90)),href:'#errBox',oc:"openBox('errBox');return false",s:'Прострочено: '+eo.length+' · усього на повторення: '+ed.length+'. Спершу виправ їх — вони важливіші за нові теми.'};
-else if(dl>0&&dl<=28) m={k:'📝 Повний пробник НМТ',t:'Пройди варіант на час',href:'#tmBox',oc:"openBox('tmBox');return false",s:'До НМТ '+dl+' дн. — тепер головне — повні пробники й повторення слабких тем.'};
+else if(dl>0&&dl<=28) m={k:'📝 Повний пробник НМТ',t:'Пройди повний варіант на час і впиши бал',href:'#mock-math',s:'До НМТ '+dl+' дн. — тепер головне — повні пробники й повторення слабких тем.'};
 else if(due.length) m={k:'🔁 Повтори (≈10 хв)',t:tl(due[0]),href:'#r-'+due[0].s+'-'+due[0].i,s:'Спершу згадай без підглядання, потім відповідай чесно. У черзі: '+due.length+'.'};
 else if(ed.length) m={k:'📝 Помилка на повторення',t:esc(shorten(ed[0].t,90)),href:'#errBox',oc:"openBox('errBox');return false",s:'Розв\'яжи без підглядання, потім познач результат. У черзі: '+ed.length+'.'};
 else if(weak.length) m={k:'🔴 Закріпи слабку тему',t:tl(weak[0]),href:'#r-'+weak[0].s+'-'+weak[0].i,s:'Перерішай 10–15 завдань, потім онови «тест %».'};
 else if(nxt) m={k:'🆕 Нова тема',t:tl(nxt)+wtTag(nxt.s,nxt.i),href:'#r-'+nxt.s+'-'+nxt.i,s:'≈'+META[nxt.s].time+'. Після теми зроби тест і впиши %.'};
-else m={k:'🏁 Усі теми пройдено',t:'Роби повні пробники',href:'#tmBox',oc:"openBox('tmBox');return false",s:'Далі — повні пробні НМТ і повторення.'};
+else m={k:'🏁 Усі теми пройдено',t:'Роби повні пробники',href:'#mock-math',s:'Далі — повні пробні НМТ і повторення.'};
 var h='<div class="card now"><div class="now-k">▶ Що робити зараз</div><a class="now-t" href="'+m.href+'"'+(m.oc?' onclick="'+m.oc+'"':'')+'><b>'+m.k+':</b> '+m.t+'</a><p class="meta">'+m.s+'</p>';
 if(ed.length&&m.k.indexOf('помил')<0) h+='<p class="meta now-n">📝 Помилок на повторення: <b>'+ed.length+'</b>'+(eo.length?' (прострочено '+eo.length+')':'')+'</p>';
 if(ed.length) h+='<div class="now-e">'+ed.slice(0,2).map(errMini).join('')+'</div>';
@@ -316,11 +316,31 @@ try{ localStorage.setItem('nmt-theme',nx); }catch(e){}
 applyTheme(); render();
 }
 function navHTML(){
-return '<nav class="subnav" aria-label="Предмети">'+ORDER.map(function(s){
+return '<nav class="subnav" role="tablist" aria-label="Предмети">'+ORDER.map(function(s){
 var dn=0, t=TID[s].length; for(var i=0;i<t;i++){ var d=ST(s,i); if(d&&d.done) dn++; }
-return '<a href="#sub-'+s+'" style="--c:'+META[s].color+'" title="'+META[s].name+'">'+ICON[s]+' '+Math.round(dn/t*100)+'%</a>';
+var on=(UI.sub===s);
+return '<button type="button" role="tab" class="tab'+(on?' on':'')+'" data-s="'+s+'" aria-selected="'+on+'" style="--c:'+META[s].color+'" title="'+META[s].name+'" aria-label="'+META[s].name+'" onclick="setSub(\''+s+'\')"><span class="ti">'+ICON[s]+'</span><span class="tn">'+META[s].name+'</span><b>'+Math.round(dn/t*100)+'%</b></button>';
 }).join('')+'<button type="button" class="thm" onclick="cycleTheme()" aria-label="Тема оформлення: '+THEME_NM[getTheme()]+'" title="Тема: '+THEME_NM[getTheme()]+'">'+THEME_IC[getTheme()]+'</button></nav>';
 }
+// Вкладки предметів: показується один предмет; під час пошуку або фільтра «лише важливі» — усі (клас .all, див. applyFilter)
+UI.sub=''; try{ UI.sub=localStorage.getItem('nmt-sub')||''; }catch(e){}
+function paintSub(){
+var g=document.querySelector('.subjects-grid'); if(g) g.setAttribute('data-active',UI.sub);
+var ts=document.querySelectorAll('.subnav .tab');
+for(var i=0;i<ts.length;i++){ var on=ts[i].getAttribute('data-s')===UI.sub; ts[i].classList.toggle('on',on); ts[i].setAttribute('aria-selected',on?'true':'false'); }
+}
+function setSub(s,keepScroll){
+if(ORDER.indexOf(s)<0) return;
+UI.sub=s; try{ localStorage.setItem('nmt-sub',s); }catch(e){}
+paintSub();
+var g=document.querySelector('.subjects-grid');
+if(!keepScroll&&g&&g.getBoundingClientRect().top<120){ var el=document.getElementById('sub-'+s); if(el) el.scrollIntoView(); }
+}
+// Посилання на тему (#r-предмет-№) або блок пробників (#mock-предмет) спершу відкривають потрібну вкладку
+document.addEventListener('click',function(e){
+var a=e.target&&e.target.closest&&e.target.closest('a[href^="#"]'); if(!a) return;
+var m=/^#(?:r|sub|mock)-([a-z]+)/.exec(a.getAttribute('href')||''); if(m) setSub(m[1],true);
+});
 applyTheme();
 if('serviceWorker' in navigator) window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 
@@ -374,13 +394,7 @@ UI.op={}; try{ var _op=JSON.parse(localStorage.getItem('nmt-op')||'{}'); if(_op&
 UI.imp=false; try{ UI.imp=localStorage.getItem('nmt-imp')==='1'; }catch(e){}
 UI.ef={s:'math',tp:'',t:'',w:0,h:'',q:0,src:'',focus:false,lim:20};
 UI.ff={s:'',w:'',st:'act'};
-UI.wkOff=0; UI.wkAuto=false; UI.wkSeen=false; UI.tf=false;
+UI.wkOff=0; UI.wkAuto=false; UI.wkSeen=false;
 UI.cd=''; UI.cs=null; UI.ce=''; UI.dh={};
 
-// ---- Швидка навігація ----
-function qnavHTML(){
-var ed=dueErrs().length, cd=cardsDueCount('');
-function b(id,t){ return '<button type="button" onclick="openBox(\''+id+'\')">'+t+'</button>'; }
-return '<nav class="qnav" aria-label="Розділи">'+b('errBox','📝 Помилки'+(ed?' <i>'+ed+'</i>':''))+b('tmBox','⏱ Таймер'+(TM.st==='run'?' <i>●</i>':''))+b('weekBox','📊 Тиждень')+b('cardBox','🃏 Картки'+(cd?' <i>'+cd+'</i>':''))+b('dynBox','📈 Динаміка')+'</nav>';
-}
 

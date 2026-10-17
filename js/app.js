@@ -12,13 +12,13 @@ var done=0;
 list.forEach(function(_,i){ var e=st[TID[subj][i]]; if(e&&e.done) done++; });
 overallDone+=done; overallTotal+=list.length;
 var pct=Math.round(done/list.length*100);
-subjHtml+='<div class="subject" id="sub-'+subj+'" style="--c:'+m.color+'">';
+subjHtml+='<div class="subject" id="sub-'+subj+'" data-s="'+subj+'" style="--c:'+m.color+'">';
 var SUBJ_ICON={math:'📐',ukr:'🔤',hist:'🏛️',eng:'💬'};
 subjHtml+='<h2>'+SUBJ_ICON[subj]+' '+m.name+'</h2>';
 subjHtml+='<p class="meta">'+done+'/'+list.length+' · ≈'+m.time+'</p>';
 subjHtml+='<div class="bar"><i style="width:'+pct+'%"></i></div>';
 var mocks=STATE.mockLog[subj]||[];
-subjHtml+='<div class="mock"><h3>Пробні тести</h3><form onsubmit="return addMock(event,\''+subj+'\')"><input type="number" min="0" max="200" placeholder="бал" required id="mi-'+subj+'"><button type="submit">Додати</button></form>';
+subjHtml+='<div class="mock" id="mock-'+subj+'"><h3>Пробні тести</h3><form onsubmit="return addMock(event,\''+subj+'\')"><input type="number" min="0" max="200" placeholder="бал" required id="mi-'+subj+'"><button type="submit">Додати</button></form>';
 if(mocks.length){
 subjHtml+='<div class="hist">';
 mocks.forEach(function(mk,mi){ subjHtml+='<span class="chip">'+esc(mk.date)+': '+esc(mk.score)+(mk.errs!==undefined&&mk.errs!==null?' · ❌'+esc(mk.errs):'')+'<button type="button" class="chip-x" title="Видалити" onclick="removeMock(\''+subj+'\','+mi+')">✕</button></span>'; });
@@ -113,23 +113,28 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 });
 subjHtml+='</div>';
 });
-subjHtml='<div class="subjects-grid">'+subjHtml+'</div>';
+var wd0=(new Date().getDay()+6)%7;
+if(ORDER.indexOf(UI.sub)<0) UI.sub=((SCHED[wd0]||[])[0])||ORDER[0];
+subjHtml='<div class="subjects-grid" data-active="'+UI.sub+'">'+subjHtml+'</div>';
 var wkH=weekHTML();
 var overallPct=Math.round(overallDone/overallTotal*100);
-var html='<div class="wrap">'+syncBarHTML()+'<h1>Тренажер підготовки до НМТ</h1>'
-+'<p class="intro">Онови позначки після кожного заняття.</p>'
-+nowHTML()+rhythmHTML()+qnavHTML()+(UI.wkAuto?wkH:'')
-+'<details class="legend-d"><summary>Умовні позначки</summary><ul class="legend">'
+var html='<div class="wrap">'
++'<header class="top"><div class="top-t"><h1>Тренажер підготовки до НМТ</h1><p class="intro">Онови позначки після кожного заняття.</p></div>'+syncBarHTML()+'</header>'
++'<section class="sec sec-now">'+nowHTML()+rhythmHTML()+(UI.wkAuto?wkH:'')+'</section>'
++'<section class="sec"><h2 class="sec-h">План і повторення</h2>'+dashHTML()+'</section>'
++'<section class="sec"><h2 class="sec-h">Інструменти</h2><div class="toolgrid">'+weakHTML()+errsHTML()+(UI.wkAuto?'':wkH)+cardsHTML()+dynHTML()+'</div></section>'
++'<section class="sec sec-subj"><h2 class="sec-h">Предмети</h2>'
++'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div>'+navHTML()+'</div>'
++toolbarHTML()
++subjHtml+'</section>'
++'<footer class="foot"><details class="legend-d"><summary>Умовні позначки</summary><ul class="legend">'
 +'<li><span class="ic">📖</span> стаття з теорією</li>'
 +'<li><span class="ic">▶️</span> відеоурок (пряме посилання або пошук на YouTube за назвою теми)</li>'
 +'<li><span class="ic">🔢</span> тестування-пробник НМТ (математика — добірка osvita.ua за темою; укр. мова й історія — osvita.ua; англійська — добірка тестів і повні варіанти)</li>'
 +'<li>з математики, укр. мови та історії показані й стаття, й відео: тьмяна іконка — другорядний варіант (для тем з чітким алгоритмом/правилом — спочатку стаття; для наочних або щільних тем — спочатку відео; для найскладніших тем обидва однаково яскраві)</li>'
 +'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
-+'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → без оцінки → знову 🟢). Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details>'
-+dashHTML()+weakHTML()+errsHTML()+timerHTML()+(UI.wkAuto?'':wkH)+cardsHTML()+dynHTML()
-+'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div>'+navHTML()+'</div>'
-+toolbarHTML()
-+subjHtml+'</div>';
++'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → без оцінки → знову 🟢). Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details></footer>'
++'</div>';
 document.getElementById('app').innerHTML=html;
 afterRender();
 }
@@ -185,6 +190,7 @@ return raw?JSON.parse(raw):null;
 
 function init(state){
 backupLegacy();
+try{ localStorage.removeItem('nmt-timer'); }catch(e){}
 STATE=migrate(loadSaved()||state||{});
 norm();
 initFirebase();
