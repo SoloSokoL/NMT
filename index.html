@@ -6,24 +6,36 @@
 <title>Тренажер підготовки до НМТ</title>
 <meta name="description" content="Тренажер підготовки до НМТ: теми, повторення, пробні тести, прогрес">
 <meta name="theme-color" content="#3B5BDB">
+
+<!-- Політика безпеки: скрипти лише з цього сайту й Firebase (gstatic), без інлайн-скриптів (події обробляє js/events.js);
+     з'єднання лише з Firestore. Якщо щось перестало працювати — відкрий консоль браузера: порушення CSP видно там.
+     Щоб тимчасово вимкнути політику, видали цей <meta>. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://*.googleapis.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="НМТ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-<!-- Шрифти не блокують показ сторінки -->
+<!-- Основний шрифт — системний San Francisco (на iPhone/iPad/Mac), на інших пристроях — Inter із кирилицею. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 
 <link rel="stylesheet" href="css/style.css">
 
 <!-- defer: сторінка показується одразу, скрипти виконуються після розбору HTML суворо за порядком.
-     Порядок важливий: Firebase → дані → стан → ядро → функції → синхронізація → запуск. -->
+     Порядок важливий: Firebase → дані → стан → події → ядро → функції → синхронізація → запуск. -->
 <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script defer src="js/topics.js"></script>
 <script defer src="js/links.js"></script>
 <script defer src="js/state.js"></script>
+<script defer src="js/events.js"></script>
 <script defer src="js/core.js"></script>
 <script defer src="js/errors.js"></script>
 <script defer src="js/stats.js"></script>

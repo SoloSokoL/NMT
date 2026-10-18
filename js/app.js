@@ -53,7 +53,7 @@ subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i
 +'</div>'
 +'<div class="fin-chips">'+chips+'</div>'
 +'<div class="row-sub">'
-+'<span class="date">'+(d.date||'')+'</span>'
++'<span class="date">'+esc(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
 +pctInput(subj,i,d)
 +'</div>'
@@ -104,7 +104,7 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 +linksHtml
 +'</div>'
 +'<div class="row-sub">'
-+'<span class="date">'+(d.date||'')+'</span>'
++'<span class="date">'+esc(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
 +pctInput(subj,i,d)
 +'</div>'
@@ -135,7 +135,7 @@ var html='<div class="wrap">'
 +'<li><span class="ic">🏁</span> підсумковий тест блоку (математика): набір тематичних добірок по всіх темах блоку — пройди їх по черзі для закріплення</li>'
 +'<li>🟢🟡🔴 крапка — впевненість у темі (клік: 🟢 → 🟡 → 🔴 → без оцінки → знову 🟢). Поле «тест %» ставить її саме: ≥80 → 🟢, 50–79 → 🟡, &lt;50 → 🔴; слабкі теми повторюються вдвічі частіше й потрапляють у «Слабкі теми»</li></ul></details></footer>'
 +'</div>';
-document.getElementById('app').innerHTML=html;
+document.getElementById('app').innerHTML=hx(html);
 afterRender();
 }
 

@@ -4,12 +4,12 @@
 .card{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow-sm);font-size:.84rem}
 .card.blk{margin:0 0 16px}
 .card .meta{padding-left:0;margin:4px 0}
-.card h3{font-family:'Fraunces',Georgia,serif;font-size:1rem;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3{font-family:var(--ui);font-size:1rem;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .card h4{font-size:.8rem;margin:12px 0 2px}
-.card summary{cursor:pointer;font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:1rem}
+.card summary{cursor:pointer;font-family:var(--ui);font-weight:600;font-size:1rem}
 .card button{font:inherit;font-size:.74rem;font-weight:600;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;background:var(--card);color:var(--ink)}
 .card button.ok{background:#2F9E44;color:#fff}
-.pill{font-family:Inter,system-ui,sans-serif;font-size:.7rem;font-weight:600;background:var(--card);border-radius:20px;padding:3px 9px}
+.pill{font-family:var(--ui);font-size:.7rem;font-weight:600;background:var(--card);border-radius:20px;padding:3px 9px}
 .plan-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .plan-row input{font:inherit;padding:4px 7px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--ink)}
 .tl,.rv{border-left:4px solid var(--c);padding:3px 0 3px 9px;margin:6px 0}
@@ -75,7 +75,7 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 }
 
 /* ===== v5: візуал та анімації (лише transform/opacity; вимикаються при prefers-reduced-motion) ===== */
-:root{--r:16px;--ease:cubic-bezier(.22,.8,.3,1)}
+:root{--r:16px;--ease:cubic-bezier(.22,.8,.3,1);--ui:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Inter','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
 #app h1{font-size:1.85rem;background:linear-gradient(100deg,var(--ink) 40%,#3B5BDB);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding-bottom:2px}
 #app .intro{font-size:.86rem}
 #app .subject{position:relative;overflow:hidden;border-radius:var(--r)}
@@ -175,7 +175,7 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 .chk{display:inline-flex;align-items:center;gap:5px}
 .wk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
 .wk{background:var(--card);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
-.wk b{font-family:'Fraunces',Georgia,serif;font-size:1.3rem}
+.wk b{font-family:var(--ui);font-size:1.3rem}
 .wk i{font-style:normal;font-size:.72rem;color:var(--sub)}
 .up{color:#2F9E44;font-weight:700}
 .dn{color:#E03131;font-weight:700}
@@ -192,7 +192,7 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 .warn{color:#E03131}
 .cw{position:relative;max-width:760px}
 .cw svg{width:100%;height:auto;display:block;overflow:visible}
-.ax{fill:var(--sub);font-size:10.5px;font-family:Inter,system-ui,sans-serif}
+.ax{fill:var(--sub);font-size:10.5px;font-family:var(--ui)}
 .gl2{stroke:var(--line);stroke-width:1}
 .bar-on{fill:#3B5BDB}
 .bar-off{fill:var(--line)}
@@ -215,13 +215,13 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 /* ===== Базові стилі (було у styleText() в index.html). Порядок збережено: ці правила йдуть після розширень, як і раніше. ===== */
 :root{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;--card:#F1EAD9;--card2:#FFFFFF;--shadow:0 1px 2px rgba(43,38,32,.04),0 6px 16px -8px rgba(43,38,32,.12);--shadow-sm:0 1px 3px rgba(43,38,32,.06)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);background-image:radial-gradient(ellipse 900px 500px at 50% -10%,rgba(59,91,219,.06),transparent);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);background-image:radial-gradient(ellipse 900px 500px at 50% -10%,rgba(59,91,219,.06),transparent);color:var(--ink);font-family:var(--ui);-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .wrap{max-width:640px;margin:0 auto;padding:22px 16px 90px}
 .subjects-grid{display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:780px){.wrap{max-width:1080px}
 .subjects-grid{grid-template-columns:1fr 1fr;align-items:start}}
 
-h1{font-family:'Fraunces',Georgia,serif;font-size:1.6rem;font-weight:600;letter-spacing:-.01em;margin:0 0 4px;line-height:1.15}
+h1{font-family:var(--ui);font-size:1.6rem;font-weight:600;letter-spacing:-.01em;margin:0 0 4px;line-height:1.15}
 .intro{font-size:.82rem;color:var(--sub);margin:0 0 16px;line-height:1.5}
 .legend{list-style:none;margin:0 0 16px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.74rem;color:var(--sub);background:var(--card);border-radius:10px}
 .legend li{display:flex;gap:5px;align-items:baseline}
@@ -238,7 +238,7 @@ h1{font-family:'Fraunces',Georgia,serif;font-size:1.6rem;font-weight:600;letter-
 .sync button{font-size:.76rem;padding:7px 11px;border:none;border-radius:8px;background:#3B5BDB;color:#fff;font-family:inherit;font-weight:600;cursor:pointer;transition:opacity .15s ease}
 .sync button:active{opacity:.75}
 .subject{margin-bottom:0;padding:15px 16px 6px;background:var(--card2);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
-.subject h2{font-family:'Fraunces',Georgia,serif;font-size:1.06rem;font-weight:600;margin:0 0 2px;padding-left:11px;border-left:4px solid var(--c);display:flex;align-items:center;gap:6px}
+.subject h2{font-family:var(--ui);font-size:1.06rem;font-weight:600;margin:0 0 2px;padding-left:11px;border-left:4px solid var(--c);display:flex;align-items:center;gap:6px}
 .meta{font-size:.73rem;color:var(--sub);margin:0 0 8px;padding-left:15px}
 .bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin:0 0 4px}
 .bar i{display:block;height:100%;background:var(--c);border-radius:4px;transition:width .3s ease}
@@ -273,7 +273,7 @@ h1{font-family:'Fraunces',Georgia,serif;font-size:1.6rem;font-weight:600;letter-
 .row-sub .cnt{width:30px;flex-shrink:0;font-size:.8rem;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;padding:4px 2px;text-align:center;font-family:inherit}
 .row-sub .cnt-label{font-size:.68rem;color:var(--sub);flex-shrink:0}
 .mock{margin:12px 0 4px;padding:11px 13px;background:var(--card);border-radius:12px}
-.mock h3{font-family:'Fraunces',Georgia,serif;font-size:.86rem;margin:0 0 7px;font-weight:600}
+.mock h3{font-family:var(--ui);font-size:.86rem;margin:0 0 7px;font-weight:600}
 .mock form{display:flex;gap:7px;margin-bottom:8px}
 .mock input[type=number]{width:64px;font-size:.86rem;padding:6px 7px;border:1px solid var(--line);border-radius:8px;font-family:inherit;background:var(--card2);color:var(--ink)}
 .mock button{font-size:.8rem;padding:6px 13px;border:none;border-radius:8px;background:var(--c);color:#fff;font-family:inherit;font-weight:600;cursor:pointer;transition:opacity .15s ease}

@@ -113,7 +113,7 @@ el.scrollIntoView({behavior:'smooth',block:'start'});
 // Оновлює лише один блок (без повного render), щоб не збивати прокрутку й поля вводу
 function updBox(id,fn){
 var el=document.getElementById(id); if(!el||!el.parentNode) return;
-var tmp=document.createElement('div'); tmp.innerHTML=fn();
+var tmp=document.createElement('div'); tmp.innerHTML=hx(fn());
 var n=tmp.firstElementChild; if(n) el.parentNode.replaceChild(n,el);
 }
 function dstat(k){
@@ -159,7 +159,37 @@ else out[k]={v:c[k],t:u[k]!==undefined?u[k]:base};
 Object.keys(u).forEach(function(p){ if(!out[p]) out[p]={v:undefined,t:u[p]}; });
 return out;
 }
+// ---- Санітизація даних (локальних, хмарних і з файлу копії): жодне поле не потрапляє в стан у «сирому» вигляді ----
+function fnum(x){ x=+x; return isFinite(x)?x:undefined; }
+function fixDate(x){ x=String(x==null?'':x); return /^[0-9.\-\/ ]{0,12}$/.test(x)?x:''; }
+// Запис теми: лише відомі поля й лише очікуваних типів (раніше хмарний запис копіювався як є, а date виводилось у HTML без екранування).
+function fixTopic(e){
+if(!e||typeof e!=='object'||Array.isArray(e)) return null;
+var o={}, v;
+if(e.done!==undefined) o.done=!!e.done;
+if(e.date!==undefined) o.date=fixDate(e.date);
+if(e.note!==undefined) o.note=str(e.note,5000);
+['ts','last','pts','upd'].forEach(function(k){ if(e[k]!==undefined){ v=fnum(e[k]); if(v!==undefined) o[k]=v; } });
+if(e.rv!==undefined){ v=fnum(e.rv); if(v!==undefined) o.rv=Math.max(0,Math.round(v)); }
+if(e.conf!==undefined){ v=fnum(e.conf); if(v!==undefined) o.conf=Math.max(0,Math.min(3,Math.round(v))); }
+if(e.pct!==undefined&&e.pct!==null&&e.pct!==''){ v=fnum(e.pct); if(v!==undefined) o.pct=Math.max(0,Math.min(100,v)); }
+if(e.count!==undefined){ v=fnum(e.count); o.count=(v!==undefined&&e.count!=='')?v:str(e.count,20); }
+return o;
+}
+// Конфіг: exam — дата РРРР-ММ-ДД, wk — рядок-мітка, goal/wt — таблиці за предметом/темою, u/upd — мітки часу.
+function fixCfg(c){
+var o={}, k, v;
+if(!c||typeof c!=='object'||Array.isArray(c)) return o;
+if(typeof c.exam==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.exam)) o.exam=c.exam;
+if(typeof c.wk==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.wk)) o.wk=c.wk;
+if(c.goal&&typeof c.goal==='object'){ o.goal={}; ORDER.forEach(function(s){ v=fnum(c.goal[s]); if(c.goal[s]!==undefined&&c.goal[s]!==''&&v!==undefined) o.goal[s]=v; }); }
+if(c.wt&&typeof c.wt==='object'){ o.wt={}; for(k in c.wt){ if(c.wt[k]==='h'||c.wt[k]==='l') o.wt[safeId(k)]=c.wt[k]; } }
+if(c.u&&typeof c.u==='object'){ o.u={}; for(k in c.u){ v=fnum(c.u[k]); if(/^[\w:\-.]{1,80}$/.test(k)&&v!==undefined) o.u[k]=v; } }
+v=fnum(c.upd); if(v!==undefined) o.upd=v;
+return o;
+}
 function mergeCfg(a,b){
+a=fixCfg(a); b=fixCfg(b);
 var fa=cfgFlat(a), fb=cfgFlat(b), o={u:{},upd:Math.max((a&&a.upd)||0,(b&&b.upd)||0)}, seen={};
 Object.keys(fa).concat(Object.keys(fb)).forEach(function(p){
 if(seen[p]) return; seen[p]=1;
@@ -236,9 +266,13 @@ var cnt={}, out=[];
 (Array.isArray(arr)?arr:[]).forEach(function(e,k){
 if(!e||typeof e!=='object') return;
 var c={}, f; for(f in e) c[f]=e[f];
-if(!c.ts) c.ts=parseDM(c.date)||0;
+if(!c.ts) c.ts=parseDM(fixDate(c.date))||0;
 if(!c.id){ var key=String(c.date||'')+'-'+c.score; cnt[key]=(cnt[key]||0)+1; c.id='L'+s+'-'+key+'-'+cnt[key]; }
-c.id=safeId(c.id); c._k=k; out.push(c);
+// у запису лишаються лише id, date, ts, score, errs — і лише чисел/безпечних рядків
+var sc=fnum(c.score); if(sc===undefined||c.score===''||c.score===null) return;
+var n={id:safeId(c.id),date:fixDate(c.date),ts:fnum(c.ts)||0,score:sc};
+if(c.errs!==undefined&&c.errs!==null&&c.errs!==''&&fnum(c.errs)!==undefined) n.errs=+c.errs;
+n._k=k; out.push(n);
 });
 out.sort(function(a,b){ return ((a.ts||0)-(b.ts||0))||(a._k-b._k); });
 out.forEach(function(c){ delete c._k; });
@@ -249,7 +283,8 @@ ORDER.forEach(function(s){ STATE[s]=STATE[s]||{}; });
 STATE.mockLog=STATE.mockLog||{};
 ORDER.forEach(function(s){ STATE.mockLog[s]=mockFix(s,STATE.mockLog[s]); });
 STATE.errs=mergeErrs(STATE.errs,[]);
-STATE.cfg=(STATE.cfg&&typeof STATE.cfg==='object')?STATE.cfg:{};
+ORDER.forEach(function(s){ var m=STATE[s]; if(!m||typeof m!=='object'){ STATE[s]=m={}; } Object.keys(m).forEach(function(k){ var t=fixTopic(m[k]); if(t) m[k]=t; else delete m[k]; }); });
+STATE.cfg=fixCfg(STATE.cfg);
 cfgStamp(STATE.cfg);
 STATE.act=STATE.act||{}; STATE.archive=STATE.archive||{}; STATE.del=STATE.del||{}; STATE.dst=STATE.dst||{};
 STATE.decks=mergeMap(STATE.decks,{},fixDeck); STATE.cards=mergeMap(STATE.cards,{},fixCard);
@@ -262,8 +297,8 @@ var A=migrate(a), B=migrate(b), o={ver:SCHEMA,archive:{}};
 ORDER.forEach(function(s){
 o[s]={}; var x=A[s]||{}, y=B[s]||{};
 Object.keys(x).concat(Object.keys(y)).forEach(function(k){
-var p=x[k], q=y[k];
-if(!p||!q){ o[s][k]=p||q; return; }
+var p=fixTopic(x[k]), q=fixTopic(y[k]);
+if(!p||!q){ if(p||q) o[s][k]=p||q; return; }
 var pu=p.upd||0, qu=q.upd||0;
 o[s][k]=pu>qu?p:qu>pu?q:((p.done&&!q.done)?p:q);
 });

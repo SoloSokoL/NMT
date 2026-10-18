@@ -130,9 +130,15 @@ return h+'</div></div>';
 
 function toolbarHTML(){
 return '<div class="tools"><input type="search" id="qIn" placeholder="🔎 Пошук теми…" value="'+esc(UI.q)+'" oninput="UI.q=this.value;applyFilter()">'
-+'<label><input type="checkbox" '+(UI.hd?'checked':'')+' onchange="UI.hd=this.checked;try{localStorage.setItem(\'nmt-hd\',UI.hd?\'1\':\'0\');}catch(e){}applyFilter()"> сховати виконані</label>'
-+'<label><input type="checkbox" '+(UI.imp?'checked':'')+' onchange="UI.imp=this.checked;try{localStorage.setItem(\'nmt-imp\',UI.imp?\'1\':\'0\');}catch(e){}applyFilter()"> лише важливі теми</label></div>'
++'<label><input type="checkbox" '+(UI.hd?'checked':'')+' onchange="setFilterFlag(\'hd\',this.checked)"> сховати виконані</label>'
++'<label><input type="checkbox" '+(UI.imp?'checked':'')+' onchange="setFilterFlag(\'imp\',this.checked)"> лише важливі теми</label></div>'
 +'<p class="meta" id="impMsg" hidden style="padding-left:0">Жодної теми не позначено як важливу.</p>';
+}
+// «сховати виконані» (hd) і «лише важливі» (imp): прапорець у UI, запам'ятовується в localStorage
+function setFilterFlag(k,v){
+UI[k]=!!v;
+try{ localStorage.setItem('nmt-'+k,UI[k]?'1':'0'); }catch(e){}
+applyFilter();
 }
 function applyFilter(){
 document.body.classList.toggle('hd',UI.hd);
@@ -344,7 +350,12 @@ var a=e.target&&e.target.closest&&e.target.closest('a[href^="#"]'); if(!a) retur
 var m=/^#(?:r|sub|mock)-([a-z]+)/.exec(a.getAttribute('href')||''); if(m) setSub(m[1],true);
 });
 applyTheme();
-if('serviceWorker' in navigator) window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+if('serviceWorker' in navigator) window.addEventListener('load',function(){
+navigator.serviceWorker.register('sw.js').then(function(reg){
+// застосунок на телефоні тижнями лишається у пам'яті: перевіряємо оновлення sw.js щоразу, коли його знову відкривають
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) reg.update().catch(function(){}); });
+}).catch(function(){});
+});
 
 // Анімація входу лише при першому показі (render() перебудовує DOM, тож без цього вона б повторювалась при кожному кліку)
 var ENTERED=false, LAST_ROW=null, PREV_BARS=null;
