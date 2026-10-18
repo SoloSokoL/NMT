@@ -55,7 +55,7 @@ subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+pctInput(subj,i,d)+wtBtn(subj,i)
++pctInput(subj,i,d)
 +'</div>'
 +'</div>';
 return;
@@ -106,7 +106,7 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 +'<div class="row-sub">'
 +'<span class="date">'+(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+pctInput(subj,i,d)+wtBtn(subj,i)
++pctInput(subj,i,d)
 +'</div>'
 +'</div>';
 });

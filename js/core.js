@@ -132,11 +132,13 @@ function toolbarHTML(){
 return '<div class="tools"><input type="search" id="qIn" placeholder="🔎 Пошук теми…" value="'+esc(UI.q)+'" oninput="UI.q=this.value;applyFilter()">'
 +'<label><input type="checkbox" '+(UI.hd?'checked':'')+' onchange="UI.hd=this.checked;try{localStorage.setItem(\'nmt-hd\',UI.hd?\'1\':\'0\');}catch(e){}applyFilter()"> сховати виконані</label>'
 +'<label><input type="checkbox" '+(UI.imp?'checked':'')+' onchange="UI.imp=this.checked;try{localStorage.setItem(\'nmt-imp\',UI.imp?\'1\':\'0\');}catch(e){}applyFilter()"> лише важливі теми</label></div>'
-+'<p class="meta" id="impMsg" hidden style="padding-left:0">Жодної теми ще не позначено як важливу. Познач її кнопкою ⚖ біля теми (часто в тесті / рідко).</p>';
++'<p class="meta" id="impMsg" hidden style="padding-left:0">Жодної теми не позначено як важливу.</p>';
 }
 function applyFilter(){
 document.body.classList.toggle('hd',UI.hd);
-var sg=document.querySelector('.subjects-grid'); if(sg) var srch=!!((UI.q||'').trim()||UI.imp); sg.classList.toggle('all',srch); document.body.classList.toggle('srch',srch);
+var srch=!!((UI.q||'').trim()||UI.imp), sg=document.querySelector('.subjects-grid');
+if(sg) sg.classList.toggle('all',srch);
+document.body.classList.toggle('srch',srch);
 var q=(UI.q||'').trim().toLowerCase(), rows=document.querySelectorAll('.row[data-t]'), any=false;
 for(var i=0;i<rows.length;i++){
 var r=rows[i], ok=(!q||r.getAttribute('data-t').indexOf(q)>-1)&&(!UI.imp||r.getAttribute('data-w')==='h');

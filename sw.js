@@ -1,5 +1,5 @@
 // Мережа першою (щоб оновлення з GitHub з'являлися одразу), кеш — запасний варіант без інтернету.
-var C='nmt-v10';
+var C='nmt-v11';
 var FILES=['./','index.html','manifest.webmanifest','icon.svg','css/style.css',
 'js/topics.js','js/links.js','js/state.js','js/core.js','js/errors.js','js/stats.js','js/cards.js','js/sync.js','js/app.js'];
 self.addEventListener('install',function(e){
