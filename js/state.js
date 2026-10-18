@@ -423,7 +423,7 @@ var WLAB={h:'важлива'};
 var WIN=4; // скільки найближчих невиконаних тем розглядається при виборі «наступної» (порядок курсу зберігається)
 function wOf(id){ return WEIGHT[id]||''; }
 function wRank(id){ return wOf(id)==='h'?0:1; }
-function wtTag(s,i){ var id=TID[s][i]; return wOf(id)?' <span class="wtg w-h" title="'+esc(WT_NOTE[id]||'')+'">★ '+WLAB.h+'</span>':''; }
+function wtTag(s,i){ var id=TID[s][i]; return wOf(id)?' <span class="wtg w-h" role="img" aria-label="'+esc(WLAB.h)+'" title="'+esc(WLAB.h+(WT_NOTE[id]?': '+WT_NOTE[id]:''))+'">★</span>':''; }
 // Наступні відкриті теми предмета: у вікні з WIN найближчих важливіші раніше, інакше — за порядком курсу
 function openTopics(s,limit){
 var win=[], i, d;
