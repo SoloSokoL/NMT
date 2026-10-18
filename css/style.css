@@ -326,3 +326,8 @@ body.srch .subnav .tab.on{opacity:.55}
 .foot .legend-d{margin:0}
 .toolgrid .plan-row>label{min-width:0;max-width:100%}
 .toolgrid select{text-overflow:ellipsis}
+
+/* Жовта зірочка «важлива» і 🔁 «на повторення» — ніколи не закреслюються:
+   inline-block не успадковує text-decoration від .t.done */
+.wtg,.wtg.w-h{display:inline-block;background:none;padding:0;border-radius:0;font-size:1em;line-height:1;color:#F59F00;text-decoration:none;vertical-align:baseline;margin-left:4px}
+.row.due .t::after{display:inline-block;text-decoration:none}
