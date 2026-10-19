@@ -97,7 +97,8 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 #app .row-main input.pop{animation:pop .32s var(--ease)}
 #app .conf.pulse{animation:pulse .4s var(--ease)}
 #app .row .t{transition:opacity .2s}
-#app .row .t.done{opacity:.6}
+/* затемнюється лише номер і назва теми; ★ і 🔁 лишаються яскравими */
+#app .row .t.done .num,#app .row .t.done .tt{opacity:.6}
 #app .conf{transition:transform .15s var(--ease)}
 #app .conf:active{transform:scale(1.35)}
 .row:target::before{content:'';position:absolute;inset:0;border-radius:8px;background:#3B5BDB;pointer-events:none;animation:flash 1.6s ease-out}

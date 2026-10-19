@@ -49,7 +49,7 @@ return '<a class="fin-chip" href="'+l.url+'" target="_blank" rel="noopener">🔢
 subjHtml+='<div class="row row-final'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'" data-w="'+wOf(TID[subj][i])+'">'
 +'<div class="row-main">'
 +'<input type="checkbox" aria-label="Тема виконана" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
-+'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>🏁 '+esc(title)+wtTag(subj,i)+'</span>'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span><span class="tt">🏁 '+esc(title)+'</span>'+wtTag(subj,i)+'</span>'
 +'</div>'
 +'<div class="fin-chips">'+chips+'</div>'
 +'<div class="row-sub">'
@@ -100,7 +100,7 @@ linksHtml+=(mode==='video'?(vidHtml+artHtml):(artHtml+vidHtml))
 subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t="'+esc(title.toLowerCase())+'" data-d="'+(d.done?1:0)+'" data-w="'+wOf(TID[subj][i])+'">'
 +'<div class="row-main">'
 +'<input type="checkbox" aria-label="Тема виконана" '+(d.done?'checked':'')+' onchange="toggle(\''+subj+'\','+i+')">'+confBtn(subj,i,d)
-+'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span>'+esc(title)+wtTag(subj,i)+'</span>'
++'<span class="t'+(d.done?' done':'')+'"><span class="num">'+seq+'.</span><span class="tt">'+esc(title)+'</span>'+wtTag(subj,i)+'</span>'
 +linksHtml
 +'</div>'
 +'<div class="row-sub">'

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Генерує icon.svg (текст «НМТ» як контури — без залежності від шрифтів) і PNG-іконки для PWA.
+"""Записує оригінальний чорний icon.svg і генерує PNG-іконки для PWA.
 Потрібні: Pillow, fontTools і шрифт з кирилицею (DejaVu Sans Bold або будь-який інший .ttf — змініть FONT).
 Запуск з кореня сайту:  python3 tools/make-icons.py"""
 from fontTools.ttLib import TTFont
@@ -9,9 +9,9 @@ from fontTools.pens.boundsPen import BoundsPen
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf'   # засічковий, схожий на Georgia з оригінальної іконки
 TEXT = 'НМТ'
-BG = '#3B5BDB'      # theme-color сайту
+BG = '#000000'
 FG = '#FFFFFF'
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -39,9 +39,8 @@ def svg_path(size, text_frac):
     return d
 
 def make_svg():
-    d = svg_path(512, 0.58)
-    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="108" fill="%s"/>'
-           '<path fill="%s" d="%s"/></svg>\n') % (BG, FG, d)
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="108" fill="#000"/>'
+           '<text x="256" y="320" font-family="Georgia,serif" font-size="190" font-weight="700" fill="#fff" text-anchor="middle">НМТ</text></svg>\n')
     open(os.path.join(ROOT, 'icon.svg'), 'w', encoding='utf-8').write(svg)
 
 def make_png(size, text_frac, rounded, name, ss=4):
@@ -67,8 +66,8 @@ def make_png(size, text_frac, rounded, name, ss=4):
 if __name__ == '__main__':
     os.makedirs(os.path.join(ROOT, 'icons'), exist_ok=True)
     make_svg()
-    make_png(192, 0.58, True,  'icon-192.png')
-    make_png(512, 0.58, True,  'icon-512.png')
-    make_png(512, 0.46, False, 'icon-maskable-512.png')   # безпечна зона maskable: центральні ~80 %
-    make_png(180, 0.60, False, 'apple-touch-icon.png')
+    make_png(192, 0.74, True,  'icon-192.png')
+    make_png(512, 0.74, True,  'icon-512.png')
+    make_png(512, 0.52, False, 'icon-maskable-512.png')   # безпечна зона maskable: центральні ~80 %
+    make_png(180, 0.70, False, 'apple-touch-icon.png')
     print('ok')
