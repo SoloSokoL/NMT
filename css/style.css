@@ -57,7 +57,6 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 .subnav .thm{flex:0 0 auto;border:none;background:var(--card);border-radius:9px;padding:5px 10px;font-size:1rem;cursor:pointer;min-height:34px}
 .subject{scroll-margin-top:130px}
 .row{scroll-margin-top:140px}
-.row:target{background:var(--card)}
 .row-sub{flex-wrap:wrap}
 .row-sub .n{min-width:120px}
 .row-sub .pc{width:38px;flex-shrink:0;font-size:.8rem;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;padding:4px 2px;text-align:center;font-family:inherit}
@@ -101,7 +100,8 @@ html[data-theme=light]{--bg:#FAF6EC;--ink:#2B2620;--sub:#7A6F60;--line:#E5DDCB;-
 #app .row .t.done .num,#app .row .t.done .tt{opacity:.6}
 #app .conf{transition:transform .15s var(--ease)}
 #app .conf:active{transform:scale(1.35)}
-.row:target::before{content:'';position:absolute;inset:0;border-radius:8px;background:#3B5BDB;pointer-events:none;animation:flash 1.6s ease-out}
+/* Підсвітка теми після переходу за посиланням (клас .hl ставить flashRow() у core.js): двічі блимає кольором предмета й повністю зникає */
+.row.hl::before{content:'';position:absolute;inset:0;border-radius:8px;background:var(--c,#3B5BDB);opacity:0;pointer-events:none;animation:hl 2.4s ease-in-out}
 #app .card.now{background:linear-gradient(135deg,color-mix(in srgb,#3B5BDB 9%,var(--card2)),var(--card2))}
 #app .pill{transition:transform .2s var(--ease)}
 details.card>summary{list-style:none;display:flex;align-items:center;gap:6px}
@@ -117,7 +117,7 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes pulse{0%{transform:scale(1)}45%{transform:scale(1.6)}100%{transform:scale(1)}}
 @keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
-@keyframes flash{from{opacity:.2}to{opacity:0}}
+@keyframes hl{0%{opacity:0}14%{opacity:.3}32%{opacity:.08}50%{opacity:.3}100%{opacity:0}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .enter #app h1,.enter #app .intro,.enter .card,.enter .rhythm,.enter .overall,.enter .subject{animation:rise .55s var(--ease) both}
 .enter .intro{animation-delay:.04s}
@@ -132,7 +132,7 @@ details[open]>:not(summary){animation:fade .25s ease-out}
 .enter .subject:nth-child(3){animation-delay:.38s}
 .enter .subject:nth-child(4){animation-delay:.44s}
 .enter .bar i{animation:grow .9s var(--ease) .35s both}
-@media(prefers-reduced-motion:reduce){.enter *,.row:target::before{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.enter *{animation:none!important}.row.hl::before{animation:none;opacity:.22}}
 
 
 /* хмарний код у лівому куті, панель — лише при наведенні/тапі */

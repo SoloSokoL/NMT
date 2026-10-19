@@ -345,9 +345,24 @@ var g=document.querySelector('.subjects-grid');
 if(!keepScroll&&g&&g.getBoundingClientRect().top<120){ var el=document.getElementById('sub-'+s); if(el) el.scrollIntoView(); }
 }
 // Посилання на тему (#r-предмет-№) або блок пробників (#mock-предмет) спершу відкривають потрібну вкладку
+// Підсвітка теми після переходу: кілька секунд блимає кольором свого предмета й зникає (без :target, щоб нічого не «залипало»)
+var HL_T=null;
+function flashRow(id){
+var r=document.getElementById(id); if(!r) return;
+var old=document.querySelector('.row.hl'); if(old) old.classList.remove('hl');
+clearTimeout(HL_T);
+r.scrollIntoView({behavior:'smooth',block:'center'});
+void r.offsetWidth; // перезапуск анімації, якщо клікнули повторно
+r.classList.add('hl');
+HL_T=setTimeout(function(){ r.classList.remove('hl'); },2600);
+}
 document.addEventListener('click',function(e){
 var a=e.target&&e.target.closest&&e.target.closest('a[href^="#"]'); if(!a) return;
-var m=/^#(?:r|sub|mock)-([a-z]+)/.exec(a.getAttribute('href')||''); if(m) setSub(m[1],true);
+var href=a.getAttribute('href')||'', m=/^#(?:r|sub|mock)-([a-z]+)/.exec(href);
+if(!m) return;
+setSub(m[1],true);
+// посилання на тему: не змінюємо адресу (#…), а самі прокручуємо й підсвічуємо; Ctrl/⌘-клік лишається звичайним
+if(/^#r-/.test(href)&&!(e.ctrlKey||e.metaKey||e.shiftKey||e.button>0)){ e.preventDefault(); flashRow(href.slice(1)); }
 });
 applyTheme();
 if('serviceWorker' in navigator) window.addEventListener('load',function(){

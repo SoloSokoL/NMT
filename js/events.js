@@ -99,7 +99,7 @@ var sel='[data-on-'+t+']';
 document.addEventListener(t,function(ev){
 var el=ev.target&&ev.target.closest?ev.target.closest(sel):null;
 while(el){
-hxRun(el.getAttribute('data-on-'+t),ev,el);
+var src=el.getAttribute('data-on-'+t); if(src!=null) hxRun(src,ev,el);
 if(ev.cancelBubble) break;
 el=el.parentElement?el.parentElement.closest(sel):null;
 }
