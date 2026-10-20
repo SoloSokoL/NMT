@@ -1,11 +1,11 @@
 /* ===== ШІ-помічник (через проксі на Cloudflare Workers) =====
    Ключ Anthropic лежить ЛИШЕ в секретах воркера. У браузері зберігається тільки APP_TOKEN (localStorage, не синхронізується в хмару).
    Результати ШІ завжди виводяться через esc() — як текст, ніколи як HTML. */
-var AI_URL='https://ТВІЙ-ВОРКЕР.workers.dev'; // ← встав адресу свого воркера (з Cloudflare → Workers)
+var AI_URL='https://icy-mountain-e330.lev-bukay.workers.dev'; // адреса воркера (Cloudflare → Workers), без слеша в кінці
 var AI_SYS='Ти — репетитор з підготовки до НМТ в Україні. Відповідай українською, стисло й по суті, без markdown-розмітки. Якщо не впевнений у факті, даті чи правилі — прямо скажи про це, нічого не вигадуй.';
 
 function aiToken(){ try{ return localStorage.getItem('nmt-ai-token')||''; }catch(e){ return ''; } }
-function aiReady(){ return AI_URL.indexOf(https://icy-mountain-e330.lev-bukay.workers.dev/)<0; }
+function aiReady(){ return /^https:\/\/[^\s]+\.workers\.dev$/.test(AI_URL); }
 
 // cb(текст, помилка). Рівно один із двох заповнений.
 function aiAsk(prompt,system,cb,max){
