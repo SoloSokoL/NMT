@@ -106,7 +106,7 @@ subjHtml+='<div class="row'+(isDue(d)?' due':'')+'" id="r-'+subj+'-'+i+'" data-t
 +'<div class="row-sub">'
 +'<span class="date">'+esc(d.date||'')+'</span>'
 +'<input class="n" placeholder="бал/нотатка" aria-label="Нотатка до теми" value="'+esc(d.note||'')+'" onchange="noteChange(\''+subj+'\','+i+',this.value)">'
-+pctInput(subj,i,d)
++pctInput(subj,i,d)+aiTopicBtn(subj,i)
 +'</div>'
 +'</div>';
 });

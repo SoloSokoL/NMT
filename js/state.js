@@ -182,6 +182,8 @@ var o={}, k, v;
 if(!c||typeof c!=='object'||Array.isArray(c)) return o;
 if(typeof c.exam==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.exam)) o.exam=c.exam;
 if(typeof c.wk==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(c.wk)) o.wk=c.wk;
+// ai — токен ШІ-воркера (лише видимі ASCII-символи без пробілів); синхронізується через хмару разом з рештою конфігу
+if(typeof c.ai==='string'&&/^[\x21-\x7e]{6,300}$/.test(c.ai)) o.ai=c.ai;
 if(c.goal&&typeof c.goal==='object'){ o.goal={}; ORDER.forEach(function(s){ v=fnum(c.goal[s]); if(c.goal[s]!==undefined&&c.goal[s]!==''&&v!==undefined) o.goal[s]=v; }); }
 if(c.wt&&typeof c.wt==='object'){ o.wt={}; for(k in c.wt){ if(c.wt[k]==='h'||c.wt[k]==='l') o.wt[safeId(k)]=c.wt[k]; } }
 if(c.u&&typeof c.u==='object'){ o.u={}; for(k in c.u){ v=fnum(c.u[k]); if(/^[\w:\-.]{1,80}$/.test(k)&&v!==undefined) o.u[k]=v; } }

@@ -8,7 +8,7 @@
      присвоєння  UI.wkOff=0   UI.ef.w=+this.value
      послідовність через «;»   і   return <виклик> / return false
    Виклики дозволені лише для глобальних функцій сторінки. */
-var HX_EVENTS=['click','change','input','submit','pointerover','pointerout','focusin'];
+var HX_EVENTS=['click','change','input','submit','pointerover','pointerout','focusin','keydown'];
 var HX_ATTR=new RegExp('(\\s)on('+HX_EVENTS.join('|')+')=("[^"]*")','g');
 function hx(html){ return String(html).replace(HX_ATTR,'$1data-on-$2=$3'); }
 

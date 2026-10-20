@@ -1,21 +1,39 @@
-/* ===== ШІ-помічник (через проксі на Cloudflare Workers) =====
-   Ключ Anthropic лежить ЛИШЕ в секретах воркера. У браузері зберігається тільки APP_TOKEN (localStorage, не синхронізується в хмару).
-   Результати ШІ завжди виводяться через esc() — як текст, ніколи як HTML. */
+/* ===== ШІ-репетитор (через проксі на Cloudflare Workers) =====
+   Ключ моделі лежить ЛИШЕ в налаштуваннях воркера. APP_TOKEN тепер зберігається в конфігу прогресу (STATE.cfg.ai)
+   і синхронізується через хмару разом з рештою даних — вводити його на кожному пристрої не треба.
+   Історія чату лишається лише на цьому пристрої (localStorage). Результати ШІ завжди виводяться через esc() — як текст, ніколи як HTML. */
 var AI_URL='https://icy-mountain-e330.lev-bukay.workers.dev'; // адреса воркера (Cloudflare → Workers), без слеша в кінці
-var AI_SYS='Ти — репетитор з підготовки до НМТ в Україні. Відповідай українською, стисло й по суті, без markdown-розмітки. Якщо не впевнений у факті, даті чи правилі — прямо скажи про це, нічого не вигадуй.';
+var AI_SYS='Ти — репетитор з підготовки до НМТ в Україні. Відповідай українською, по суті, без markdown-розмітки. Якщо не впевнений у факті, даті чи правилі — прямо скажи про це, нічого не вигадуй.';
+var AI_MAX_MSG=30;
+var AI_TOKEN_RE=/^[\x21-\x7e]{6,300}$/;
 
-function aiToken(){ try{ return localStorage.getItem('nmt-ai-token')||''; }catch(e){ return ''; } }
+function lsGet(k){ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+// ---- Токен: зберігається в STATE.cfg.ai (синхронізується в хмару) ----
+function aiMigrate(){
+if(UI.aiMig) return; UI.aiMig=true;
+var ls=lsGet('nmt-ai-token'); if(!ls) return;
+if(AI_TOKEN_RE.test(ls)){
+if(!cfgGet('ai')){ cfgSet('ai',ls); setTimeout(persist,0); }
+try{ localStorage.removeItem('nmt-ai-token'); }catch(e){}
+}
+}
+function aiToken(){ var t=cfgGet('ai'); return (typeof t==='string'&&t)?t:lsGet('nmt-ai-token'); }
 function aiReady(){ return /^https:\/\/[^\s]+\.workers\.dev$/.test(AI_URL); }
 
-// cb(текст, помилка). Рівно один із двох заповнений.
-function aiAsk(prompt,system,cb,max){
+// cb(текст, помилка). Рівно один із двох заповнений. msgs — історія діалогу (новий воркер); prompt лишається для старого воркера.
+// box — об'єкт, куди кладеться AbortController (щоб запит можна було скасувати).
+function aiAsk(prompt,system,cb,max,msgs,box){
 if(!aiReady()){ cb(null,'У js/ai.js не вказано адресу воркера (AI_URL).'); return; }
-if(!aiToken()){ cb(null,'Спершу впиши токен у блоці «🤖 ШІ».'); return; }
+if(!aiToken()){ cb(null,'Спершу впиши токен у «⚙️ Налаштування ШІ».'); return; }
 if(typeof navigator!=='undefined'&&navigator.onLine===false){ cb(null,'Немає інтернету.'); return; }
-var ctl=window.AbortController?new AbortController():null, tm=setTimeout(function(){ if(ctl) ctl.abort(); },40000);
+var ctl=window.AbortController?new AbortController():null, tm=setTimeout(function(){ if(ctl) ctl.abort(); },60000);
+if(box) box.ctl=ctl;
+var payload={prompt:prompt,system:system||AI_SYS,max:max||600}; if(msgs&&msgs.length) payload.messages=msgs;
 fetch(AI_URL,{method:'POST',signal:ctl?ctl.signal:undefined,
 headers:{'content-type':'application/json','x-app-token':aiToken()},
-body:JSON.stringify({prompt:prompt,system:system||AI_SYS,max:max||600})})
+body:JSON.stringify(payload)})
 .then(function(r){
 if(r.status===403) throw new Error('Токен не підійшов (403). Перевір APP_TOKEN.');
 if(r.status===429) throw new Error('Забагато запитів — спробуй за хвилину.');
@@ -23,10 +41,15 @@ if(!r.ok) throw new Error('Помилка воркера: '+r.status);
 return r.json();
 })
 .then(function(d){ clearTimeout(tm); var t=String((d&&d.text)||'').trim(); if(!t) cb(null,'ШІ повернув порожню відповідь.'); else cb(t,null); })
-.catch(function(e){ clearTimeout(tm); cb(null,e&&e.name==='AbortError'?'Час очікування вичерпано.':(e&&e.message&&e.message.indexOf('Failed to fetch')<0?e.message:'Немає зв\'язку з воркером (перевір адресу й CSP у консолі).')); });
+.catch(function(e){
+clearTimeout(tm);
+if(e&&e.name==='AbortError') cb(null,ctl&&ctl.userStop?'Скасовано.':'Час очікування вичерпано.');
+else cb(null,(e&&e.message&&e.message.indexOf('Failed to fetch')<0)?e.message:'Немає зв\'язку з воркером (перевір адресу й CSP у консолі).');
+});
 }
 
-// Стан запитів: UI.ai[ключ] = {st:'busy'|'ok'|'err', text}. Ключ починається з e (помилка), w (тиждень) або c (картки).
+// ---- Одноразові запити (помилки, тиждень, картки) ----
+// Стан запитів: UI.ai[ключ] = {st:'busy'|'ok'|'err', text}. Ключ починається з e (помилка), w (тиждень), c (картки) або t (токен).
 function aiBox(key){ var c=key.charAt(0); return c==='t'?['aiBox',aiBoxHTML]:c==='e'?['errBox',errsHTML]:c==='w'?['weekBox',weekHTML]:['cardBox',cardsHTML]; }
 function aiRefresh(key){ var b=aiBox(key); updBox(b[0],b[1]); }
 function aiRun(key,prompt,max){
@@ -55,7 +78,7 @@ return '<button type="button"'+(busy?' disabled':'')+' onclick="aiExplainErr(\''
 }
 function aiErrBlock(e){
 var k='e'+e.id, a=UI.ai&&UI.ai[k];
-return a?aiStatus(k,a.st==='ok'?'<button type="button" class="ok" onclick="aiSaveHint(\''+e.id+'\')">💾 У «Як правильно»</button>':''):'';
+return a?aiStatus(k,a.st==='ok'?'<button type="button" class="ok" onclick="aiSaveHint(\''+e.id+'\')">💾 У «Як правильно»</button><button type="button" onclick="aiChatAboutErr(\''+e.id+'\')">💬 Обговорити в чаті</button>':''):'';
 }
 function aiExplainErr(id){
 var k=findErr(id); if(k<0) return; var e=STATE.errs[k], tp=errTopic(e);
@@ -67,6 +90,16 @@ function aiSaveHint(id){
 var k=findErr(id), a=UI.ai&&UI.ai['e'+id]; if(k<0||!a||a.st!=='ok') return;
 var e=STATE.errs[k]; e.h=a.text.replace(/\s+/g,' ').slice(0,400); e.upd=Date.now(); bump();
 delete UI.ai['e'+id]; render(); persist();
+}
+// Переносить помилку разом із поясненням у чат, щоб можна було уточнювати
+function aiChatAboutErr(id){
+var k=findErr(id), a=UI.ai&&UI.ai['e'+id]; if(k<0||!a||a.st!=='ok') return;
+var e=STATE.errs[k], tp=errTopic(e);
+aiChatInit();
+UI.aiS=e.subj; UI.aiTp=e.tid||'';
+UI.chat.push({r:'u',t:'Я помилився в завданні: '+e.t+' ('+META[e.subj].name+(tp?', '+tp:'')+'). Причина: '+ERR_WHY[e.w|0]+'.'});
+UI.chat.push({r:'a',t:a.text});
+aiSaveChat(); delete UI.ai['e'+id]; render(); aiOpenChat();
 }
 
 // ---- Картки: генерація ----
@@ -114,26 +147,193 @@ var p='Дані учня за тиждень підготовки до НМТ:\n
 aiRun('w'+off,p,500);
 }
 
-// ---- Налаштування токена ----
+// ======================= ЧАТ-РЕПЕТИТОР =======================
+function aiLoadChat(){
+try{
+var a=JSON.parse(lsGet('nmt-ai-chat')||'[]');
+if(!Array.isArray(a)) return [];
+return a.filter(function(m){ return m&&(m.r==='u'||m.r==='a')&&typeof m.t==='string'&&m.t; }).map(function(m){ return {r:m.r,t:m.t.slice(0,4000)}; }).slice(-AI_MAX_MSG);
+}catch(e){ return []; }
+}
+function aiSaveChat(){ lsSet('nmt-ai-chat',JSON.stringify((UI.chat||[]).slice(-AI_MAX_MSG))); }
+function aiChatInit(){
+if(UI.chat) return;
+UI.chat=aiLoadChat(); UI.chatSt=''; UI.chatErr=''; UI.chatTok=0; UI.aiIn='';
+UI.aiCtx=lsGet('nmt-ai-ctx')!=='0'; UI.aiLen=lsGet('nmt-ai-len')==='long'?'long':'short';
+UI.aiS=UI.aiS||''; UI.aiTp=UI.aiTp||'';
+}
+function aiTopicInfo(){
+var s=UI.aiS; if(!s||!META[s]) return '';
+var i=UI.aiTp?TID[s].indexOf(UI.aiTp):-1;
+return META[s].name+(i>-1?': '+TOPICS[s][i]:'');
+}
+// Короткий зріз прогресу для підказки моделі (без зайвих персональних даних)
+function aiContext(){
+var L=[], dl=examDl(), wd=(new Date().getDay()+6)%7;
+if(dl>0) L.push('До НМТ залишилось днів: '+dl);
+L.push('Розклад на сьогодні: '+((SCHED[wd]||[]).map(function(s){ return META[s].name; }).join(', ')||'повторення'));
+ORDER.forEach(function(s){
+var done=0, i; for(i=0;i<TID[s].length;i++){ var e=ST(s,i); if(e&&e.done) done++; }
+var arr=(STATE.mockLog&&STATE.mockLog[s])||[], last=arr.length?arr[arr.length-1].score:null, g=cfgGet('goal:'+s);
+L.push(META[s].name+': тем '+done+'/'+TID[s].length+(last!==null?', останній пробник '+last:'')+((g!==undefined&&g!=='')?', ціль '+g:''));
+});
+var w=weakList().slice(0,6).map(function(o){ return TOPICS[o.s][o.i]+(o.p!==null?' ('+o.p+'%)':''); });
+if(w.length) L.push('Слабкі теми: '+w.join('; '));
+L.push('На повторення: тем '+dueTopics().length+', помилок '+dueErrs().length);
+return L.join('\n');
+}
+function aiChatSys(force){
+var s=AI_SYS+' Ти ведеш діалог з учнем: враховуй попередні повідомлення. '+(UI.aiLen==='long'?'Відповідай докладно (до ~1200 символів), з прикладами.':'Відповідай коротко (до ~500 символів).');
+var t=aiTopicInfo(); if(t) s+='\nПоточна тема розмови: '+t+'.';
+if(UI.aiCtx||force) s+='\nДані учня (спирайся лише на них, інших не вигадуй):\n'+aiContext();
+return s;
+}
+function aiChatRefresh(focus){
+updBox('aiBox',aiBoxHTML);
+setTimeout(function(){
+var l=document.getElementById('ai-log'); if(l) l.scrollTop=l.scrollHeight;
+if(focus&&UI.chatSt!=='busy'&&!('ontouchstart' in window)){ var t=document.getElementById('ai-in'); if(t) t.focus(); }
+},0);
+}
+function aiOpenChat(){
+aiChatInit(); updBox('aiBox',aiBoxHTML); openBox('aiBox');
+setTimeout(function(){ var l=document.getElementById('ai-log'); if(l) l.scrollTop=l.scrollHeight; },60);
+}
+function aiCall(force){
+var tok=++UI.chatTok;
+var msgs=UI.chat.slice(-10).map(function(m){ return {role:m.r==='u'?'user':'assistant',content:m.t.slice(0,1500)}; });
+while(msgs.length&&msgs[0].role!=='user') msgs.shift();
+// для старого воркера (приймає лише prompt) історія склеюється в один текст
+var flat=msgs.map(function(m){ return (m.role==='user'?'Учень: ':'Репетитор: ')+m.content; }).join('\n\n').slice(-3800);
+UI.chatSt='busy'; UI.chatErr=''; UI.chatBox={};
+aiChatRefresh(false);
+aiAsk(flat,aiChatSys(force),function(text,err){
+if(tok!==UI.chatTok) return; // чат очищено, поки йшов запит
+UI.chatSt='';
+if(err) UI.chatErr=err; else{ UI.chat.push({r:'a',t:text}); aiSaveChat(); dstatAi(); }
+aiChatRefresh(true);
+},UI.aiLen==='long'?1200:600,msgs,UI.chatBox);
+}
+function dstatAi(){ try{ dstat('ai'); }catch(e){} }
+function aiSend(text,force){
+aiChatInit();
+if(UI.chatSt==='busy') return;
+text=String(text||'').trim().slice(0,1500); if(!text) return;
+if(!aiReady()||!aiToken()){ UI.chatErr=!aiReady()?'У js/ai.js не вказано адресу воркера (AI_URL).':'Спершу впиши токен у «⚙️ Налаштування ШІ» нижче.'; aiChatRefresh(false); return; }
+UI.chat.push({r:'u',t:text}); UI.aiIn=''; aiSaveChat();
+aiCall(force);
+}
+function aiSendInput(){ var t=document.getElementById('ai-in'); aiSend(t?t.value:UI.aiIn); }
+function aiKey(ev){
+if(ev.key==='Enter'&&!ev.shiftKey&&!ev.isComposing&&!('ontouchstart' in window)){ ev.preventDefault(); aiSendInput(); }
+}
+function aiStop(){ var c=UI.chatBox&&UI.chatBox.ctl; if(c){ c.userStop=true; c.abort(); } }
+function aiRetry(){ aiChatInit(); if(UI.chatSt==='busy') return; if(UI.chat.length&&UI.chat[UI.chat.length-1].r==='u') aiCall(false); else{ UI.chatErr=''; aiChatRefresh(false); } }
+function aiClearChat(){
+aiChatInit();
+if(UI.chat.length&&!confirm('Очистити всю розмову?')) return;
+UI.chat=[]; UI.chatTok++; UI.chatSt=''; UI.chatErr=''; aiSaveChat(); aiChatRefresh(false);
+}
+function aiSetSubj(v){
+aiChatInit(); UI.aiS=META[v]?v:''; UI.aiTp='';
+var el=document.getElementById('ai-tp'); if(el) el.innerHTML=topicOpts(UI.aiS,'');
+}
+function aiSetCtx(on){ aiChatInit(); UI.aiCtx=!!on; lsSet('nmt-ai-ctx',on?'1':'0'); }
+function aiSetLen(v){ aiChatInit(); UI.aiLen=v==='long'?'long':'short'; lsSet('nmt-ai-len',UI.aiLen); }
+function aiQuick(kind){
+aiChatInit();
+if(UI.chatSt==='busy') return;
+var t=aiTopicInfo(), p, force=false;
+if(kind==='plan'){ p='Склади конкретний план занять на сьогодні (2–3 години) за моїми даними: що повторити, що вчити нове, скільки хвилин на кожне.'; force=true; }
+else if(kind==='weak'){ p='Розбери мої слабкі теми та помилки: з чого почати, у якому порядку і як підтягнути їх за 1–2 тижні.'; force=true; }
+else{
+if(!t){ UI.chatErr='Спершу обери предмет і тему вище.'; aiChatRefresh(false); return; }
+p=kind==='explain'
+?'Поясни тему: '+t+'. Дай суть правила, 1–2 типові приклади завдань НМТ з розв\'язанням і найчастіші помилки.'
+:'Склади 5 тестових завдань рівня НМТ за темою: '+t+', кожне з 4 варіантами відповіді. Правильні відповіді НЕ показуй — я напишу свої, а ти перевіриш і поясниш помилки.';
+}
+aiSend(p,force);
+}
+// Кнопка 🤖 біля теми в списку: відкриває чат із цією темою й одразу просить пояснення
+function aiTopicBtn(subj,i){
+return '<button type="button" class="ai-tb" title="Запитати ШІ про цю тему" aria-label="Запитати ШІ про цю тему" onclick="aiAskTopic(\''+subj+'\','+i+')">🤖</button>';
+}
+function aiAskTopic(subj,i){
+aiChatInit();
+UI.aiS=subj; UI.aiTp=TID[subj][i];
+aiOpenChat();
+if(aiToken()) aiQuick('explain');
+}
+function aiCopy(i,el){
+var m=UI.chat&&UI.chat[i]; if(!m) return;
+try{ navigator.clipboard.writeText(m.t).then(function(){ if(el) el.textContent='✓ Скопійовано'; }); }catch(e){}
+}
+function aiToCards(i){
+var m=UI.chat&&UI.chat[i]; if(!m||m.r!=='a') return;
+if(!curDeck()){ alert('Спершу створи колоду в блоці «Картки».'); return; }
+var p='Зроби з цього тексту до 10 навчальних карток для НМТ.\nФормат: кожна картка в окремому рядку — питання;відповідь\nПравила: без нумерації і пояснень; символ «;» лише як роздільник; питання коротке, відповідь до 150 символів; бери лише те, що є в тексті.\n\nТекст:\n'+m.t.slice(0,2500);
+UI.aiCards=''; aiRun('c',p,1500); openBox('cardBox');
+}
+function aiMsgHTML(m,i){
+var a=m.r==='a';
+return '<div class="am '+(a?'a':'u')+'"><div class="am-t">'+esc(m.t)+'</div>'
++(a?'<div class="am-b"><button type="button" onclick="aiCopy('+i+',this)" title="Копіювати відповідь">📋 Копіювати</button><button type="button" onclick="aiToCards('+i+')" title="Зробити картки з цієї відповіді">🃏 У картки</button></div>':'')+'</div>';
+}
+function aiChatHTML(){
+aiChatInit();
+var busy=UI.chatSt==='busy', h='';
+h+='<div class="aictx"><select id="ai-sj" aria-label="Предмет" onchange="aiSetSubj(this.value)"><option value="">— предмет —</option>'
++ORDER.map(function(s){ return '<option value="'+s+'"'+(UI.aiS===s?' selected':'')+'>'+ICON[s]+' '+esc(META[s].name)+'</option>'; }).join('')+'</select>'
++'<select id="ai-tp" aria-label="Тема" onchange="UI.aiTp=this.value">'+topicOpts(UI.aiS,UI.aiTp)+'</select></div>';
+h+='<div class="aiqa"><button type="button"'+(busy?' disabled':'')+' onclick="aiQuick(\'explain\')">📖 Пояснити тему</button>'
++'<button type="button"'+(busy?' disabled':'')+' onclick="aiQuick(\'quiz\')">📝 Міні-тест (5)</button>'
++'<button type="button"'+(busy?' disabled':'')+' onclick="aiQuick(\'plan\')">📅 План на сьогодні</button>'
++'<button type="button"'+(busy?' disabled':'')+' onclick="aiQuick(\'weak\')">🔴 Мої слабкі місця</button></div>';
+h+='<div class="aichat" id="ai-log" role="log" aria-live="polite">';
+if(!UI.chat.length&&!busy&&!UI.chatErr) h+='<p class="meta">Обери тему й натисни швидку дію або просто запитай. Можна вставити текст завдання — репетитор розбере його покроково. Розмова триває: уточнюй, проси інший приклад чи перевірити відповідь.</p>';
+UI.chat.forEach(function(m,i){ h+=aiMsgHTML(m,i); });
+if(busy) h+='<div class="am a" role="status"><div class="am-t">🤖 Думаю…</div></div>';
+if(UI.chatErr) h+='<div class="am a" role="alert"><div class="am-t">⚠️ '+esc(UI.chatErr)+'</div>'+(UI.chat.length&&UI.chat[UI.chat.length-1].r==='u'?'<div class="am-b"><button type="button" onclick="aiRetry()">↻ Повторити</button></div>':'')+'</div>';
+h+='</div>';
+h+='<div class="aiin"><textarea id="ai-in" rows="2" maxlength="1500" aria-label="Повідомлення репетитору" placeholder="Запитай або встав завдання…  (Enter — надіслати, Shift+Enter — новий рядок)" oninput="UI.aiIn=this.value" onkeydown="aiKey(event)">'+esc(UI.aiIn||'')+'</textarea>'
++(busy?'<button type="button" onclick="aiStop()">⏹ Стоп</button>':'<button type="button" class="ok" onclick="aiSendInput()">Надіслати</button>')+'</div>';
+h+='<div class="aictx"><label class="chk"><input type="checkbox"'+(UI.aiCtx?' checked':'')+' onchange="aiSetCtx(this.checked)"> Враховувати мій прогрес</label>'
++'<select aria-label="Довжина відповіді" onchange="aiSetLen(this.value)"><option value="short"'+(UI.aiLen==='short'?' selected':'')+'>Коротко</option><option value="long"'+(UI.aiLen==='long'?' selected':'')+'>Докладно</option></select>'
++'<button type="button" onclick="aiClearChat()"'+(UI.chat.length?'':' disabled')+'>🗑 Очистити розмову</button></div>';
+return h;
+}
+
+// ---- Налаштування токена (зберігається в хмарі разом із прогресом) ----
 function aiBoxHTML(){
+aiMigrate(); aiChatInit();
 var has=!!aiToken(), a=UI.ai&&UI.ai.t;
-var h='<details class="card blk box" id="aiBox"'+(isOpen('aiBox',false)?' open':'')+'><summary>🤖 ШІ ('+(has?'токен є':'не налаштовано')+')</summary>';
-h+='<p class="meta">Запити йдуть через твій Cloudflare Worker; ключ Anthropic у браузері не зберігається. Токен лишається лише на цьому пристрої (у хмару не синхронізується).</p>';
+var h='<details class="card blk box" id="aiBox"'+(isOpen('aiBox',false)?' open':'')+'><summary>🤖 ШІ-репетитор ('+(has?'готовий':'потрібен токен')+')</summary>';
 if(!aiReady()) h+='<p class="meta warn">⚠️ У js/ai.js ще не вказано адресу воркера (AI_URL).</p>';
+h+=aiChatHTML();
+var cloud=!!(db&&getSyncCode());
+h+='<details class="subd"'+(!has||UI.aiSetOpen||a?' open':'')+'><summary>⚙️ Налаштування ШІ</summary>';
+h+='<p class="meta">Запити йдуть через твій Cloudflare Worker; ключ моделі в браузері не зберігається. '
++(cloud?'Токен зберігається разом із прогресом у хмарі (код синхронізації ☁️) і з\'явиться на інших пристроях сам. Хто знає код синхронізації — може прочитати токен; якщо код потрапив до чужих, зміни APP_TOKEN у воркері й впиши новий.'
+:'Токен зберігається разом із прогресом у цьому браузері. Підключи хмарну синхронізацію (☁️ угорі), щоб він з\'являвся на інших пристроях сам.')+' Історія чату лишається лише на цьому пристрої.</p>';
 h+='<div class="plan-row"><input id="ai-tok" type="password" autocomplete="off" spellcheck="false" placeholder="'+(has?'новий токен (замінить поточний)':'APP_TOKEN з воркера')+'" aria-label="Токен ШІ">'
 +'<button type="button" class="ok" onclick="aiSaveToken()">Зберегти</button>'
-+(has?'<button type="button" onclick="aiClearToken()">Видалити</button><button type="button" onclick="aiTest()">Перевірити</button>':'')+'</div>';
++(has?'<button type="button" onclick="aiClearToken()">Видалити скрізь</button><button type="button" onclick="aiTest()">Перевірити</button>':'')+'</div>';
 if(a) h+=aiStatus('t');
-return h+'</details>';
+return h+'</details></details>';
 }
 function aiBoxRefresh(){ updBox('aiBox',aiBoxHTML); }
 function aiSaveToken(){
 var el=document.getElementById('ai-tok'), v=el?(el.value||'').trim():''; if(!v) return;
-try{ localStorage.setItem('nmt-ai-token',v); }catch(e){}
-aiBoxRefresh();
+UI.ai=UI.ai||{}; UI.aiSetOpen=true;
+if(!AI_TOKEN_RE.test(v)){ UI.ai.t={st:'err',text:'Токен має бути від 6 до 300 символів: латиниця, цифри, знаки — без пробілів і кирилиці.'}; aiBoxRefresh(); return; }
+cfgSet('ai',v); try{ localStorage.removeItem('nmt-ai-token'); }catch(e){}
+delete UI.ai.t; persist(); aiBoxRefresh();
 }
-function aiClearToken(){ try{ localStorage.removeItem('nmt-ai-token'); }catch(e){} if(UI.ai) delete UI.ai.t; aiBoxRefresh(); }
+function aiClearToken(){
+cfgSet('ai',undefined); try{ localStorage.removeItem('nmt-ai-token'); }catch(e){}
+if(UI.ai) delete UI.ai.t; UI.aiSetOpen=true; persist(); aiBoxRefresh();
+}
 function aiTest(){
-UI.ai=UI.ai||{}; UI.ai.t={st:'busy',text:''}; aiBoxRefresh();
+UI.ai=UI.ai||{}; UI.aiSetOpen=true; UI.ai.t={st:'busy',text:''}; aiBoxRefresh();
 aiAsk('Відповідай одним словом: працює.',AI_SYS,function(t,err){ UI.ai.t=err?{st:'err',text:err}:{st:'ok',text:'Зв\'язок є: '+t}; aiBoxRefresh(); },50);
 }

@@ -21,13 +21,23 @@ export default {
 
     let body;
     try { body = await req.json(); } catch (e) { return json({ error: 'bad json' }, 400); }
-    const prompt = String(body.prompt || '').slice(0, 4000);
-    if (!prompt) return json({ error: 'empty' }, 400);
     const max = Math.max(50, Math.min(1500, parseInt(body.max, 10) || 600));
-
     const model = env.MODEL || '@cf/nvidia/nemotron-3-120b-a12b';
-    const system = String(body.system || '').slice(0, 2000);
-    const messages = (system ? [{ role: 'system', content: system }] : []).concat([{ role: 'user', content: prompt }]);
+    const system = String(body.system || '').slice(0, 4000);
+    // Діалог: body.messages = [{role:'user'|'assistant', content}] (до 14 останніх). Старий формат body.prompt теж працює.
+    let dialog = [];
+    if (Array.isArray(body.messages)) {
+      dialog = body.messages.slice(-14)
+        .map(m => ({ role: m && m.role === 'assistant' ? 'assistant' : 'user', content: String((m && m.content) || '').slice(0, 3000) }))
+        .filter(m => m.content);
+      while (dialog.length && dialog[0].role !== 'user') dialog.shift();
+      if (!dialog.length || dialog[dialog.length - 1].role !== 'user') return json({ error: 'empty' }, 400);
+    } else {
+      const prompt = String(body.prompt || '').slice(0, 4000);
+      if (!prompt) return json({ error: 'empty' }, 400);
+      dialog = [{ role: 'user', content: prompt }];
+    }
+    const messages = (system ? [{ role: 'system', content: system }] : []).concat(dialog);
     let d;
     try {
       d = await env.AI.run(model, { messages, max_tokens: max });
