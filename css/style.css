@@ -350,31 +350,3 @@ body.srch .subnav .tab.on{opacity:.55}
 .aiin textarea{flex:1;resize:vertical;min-height:44px;font-size:16px}
 .row-sub button.ai-tb{flex-shrink:0;border:none;background:transparent;cursor:pointer;font-size:.9rem;opacity:.55;padding:2px 4px;min-width:28px;min-height:28px}
 .row-sub button.ai-tb:hover,.row-sub button.ai-tb:focus-visible{opacity:1}
-
-/* ===== v7: легке покращення (палітра, шрифти й структура — без змін) ===== */
-/* список тем: трохи більше повітря й охайніші іконки-посилання */
-.row{padding:10px 4px;font-size:.9rem}
-.row-main{gap:9px}
-.row-main .lnk{width:30px;height:30px;border-radius:9px;background:var(--card);opacity:1}
-.row-main .lnk-empty{background:none}
-.row-main .lnk-secondary{opacity:.4}
-.row-sub{margin-top:6px;padding-left:28px}
-.row-sub .n,.row-sub .pc{background:var(--card);border:1px solid transparent;border-radius:8px;padding:5px 8px}
-.row-sub .n:focus,.row-sub .pc:focus{border-color:var(--c);background:var(--card2)}
-.conf{width:15px;height:15px}
-.block-h{margin-top:16px}
-
-/* вкладки предметів: акуратніший перемикач */
-.subnav{background:var(--card);padding:4px;border-radius:13px;gap:3px}
-.subnav .tab{border:none;background:transparent;border-radius:10px;min-height:40px}
-.subnav .tab.on{background:var(--card2);box-shadow:var(--shadow-sm),inset 0 -3px 0 var(--c)}
-.subnav .tab:not(.on):hover{border-bottom-color:transparent}
-
-/* картки й поля */
-.card button{border:1px solid var(--line);background:var(--card2)}
-.card button.ok{border-color:#2F9E44}
-.card input:focus,.card select:focus,.card textarea:focus,.tools input[type=search]:focus,.sync input:focus{outline:none;border-color:#3B5BDB;box-shadow:0 0 0 3px rgba(59,91,219,.18)}
-.mock{border-radius:14px}
-.mock .chip{border-radius:99px;padding:4px 6px 4px 11px}
-#app .bar,#app .bar i{border-radius:99px}
-.wk b{font-variant-numeric:tabular-nums}
