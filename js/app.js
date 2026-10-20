@@ -122,7 +122,7 @@ var html='<div class="wrap">'
 +'<header class="top"><div class="top-t"><h1>Тренажер підготовки до НМТ</h1><p class="intro">Онови позначки після кожного заняття.</p></div>'+syncBarHTML()+'</header>'
 +'<section class="sec sec-now">'+nowHTML()+rhythmHTML()+(UI.wkAuto?wkH:'')+'</section>'
 +'<section class="sec"><h2 class="sec-h">План і повторення</h2>'+dashHTML()+'</section>'
-+'<section class="sec"><h2 class="sec-h">Інструменти</h2><div class="toolgrid">'+weakHTML()+errsHTML()+(UI.wkAuto?'':wkH)+cardsHTML()+dynHTML()+'</div></section>'
++'<section class="sec"><h2 class="sec-h">Інструменти</h2><div class="toolgrid">'+weakHTML()+errsHTML()+(UI.wkAuto?'':wkH)+cardsHTML()+aiBoxHTML()+dynHTML()+'</div></section>'
 +'<section class="sec sec-subj"><h2 class="sec-h">Предмети</h2>'
 +'<div class="overall"><p class="meta">Загальний прогрес: '+overallDone+'/'+overallTotal+' ('+overallPct+'%)</p><div class="bar"><i style="width:'+overallPct+'%"></i></div>'+navHTML()+'</div>'
 +toolbarHTML()

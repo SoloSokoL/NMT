@@ -167,7 +167,7 @@ h+='<form class="errform" onsubmit="return cardAdd(event)"><label class="fl">П�
 h+='<details class="subd"><summary>📥 Імпорт карток</summary><p class="meta">Один запис на рядок: <b>питання;відповідь</b> (також табуляція або кома). Якщо в тексті є «;», бери поле в лапки. CSV зберігай у кодуванні UTF-8. Дублікати за питанням пропускаються.</p>'
 +'<textarea id="ci-t" rows="4" placeholder="питання;відповідь" aria-label="Текст для імпорту"></textarea>'
 +'<div class="plan-row"><button type="button" class="ok" onclick="cardsImportText()">Імпортувати текст</button><label class="filebtn">📄 З файлу CSV<input type="file" accept=".csv,.txt,text/csv,text/plain" onchange="cardsImportFile(this)" hidden></label><button type="button" onclick="cardsTemplate()">⬇️ Шаблон CSV</button></div>'+(UI.imsg?'<p class="meta">'+esc(UI.imsg)+'</p>':'')+'</details>';
-UI.imsg='';
+UI.imsg=''; h+=aiCardsHTML();
 if(cs.length){
 h+='<details class="subd"><summary>Усі картки колоди ('+cs.length+')</summary>';
 cs.slice().sort(function(a,b){ return (a.ts||0)-(b.ts||0); }).slice(0,150).forEach(function(c){

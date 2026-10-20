@@ -74,10 +74,11 @@ var m=META[e.subj]||{color:'#999'}, tp=errTopic(e), due=errIsDue(e);
 var h='<div class="er'+(e.fixed?' fx':'')+(due?' dueE':'')+'" style="border-left:4px solid '+m.color+';padding-left:8px"><div class="eb"><b class="et">'+esc(e.t)+'</b>'
 +'<div class="em"><i>'+(ICON[e.subj]||'')+' '+esc(m.name)+(tp?' · '+esc(tp):'')+'</i></div>'
 +'<div class="em"><i>причина: '+esc(ERR_WHY[e.w|0])+'</i> · <i>повтор '+(e.fixed?ERR_INT.length:(e.step||0))+'/'+ERR_INT.length+'</i> · <i class="'+(errOverdue(e)?'od':'')+'">'+dueTxt(e)+'</i>'+(e.fails?' · <i>зривів: '+e.fails+'</i>':'')+'</div>';
-if(e.h) h+='<div class="en">✅ Як правильно: '+esc(e.h)+'</div>';
+if(e.h) h+='<div class="en">✅ Як правильно: '+esc(e.h)+'</div>'; h+=aiErrBlock(e);
 h+='</div><div class="ea">';
 if(e.fixed) h+='<button type="button" onclick="errBack(\''+e.id+'\')" title="Повернути в повторення">↺</button>';
 else h+='<button type="button" class="ok" onclick="errOk(\''+e.id+'\')" title="Розв\'язав правильно">✓ Розв\'язав</button><button type="button" onclick="errBad(\''+e.id+'\')" title="Знову помилився — інтервали спочатку">✗ Знову</button>';
+if(!e.fixed) h+=aiErrBtn(e);
 return h+'<button type="button" onclick="errDel(\''+e.id+'\')" aria-label="Видалити помилку" title="Видалити">🗑</button></div></div>';
 }
 function errFilter(k,v){ UI.ff[k]=v; UI.ef.lim=20; updBox('errBox',errsHTML); }

@@ -79,7 +79,7 @@ else t='<i>цього тижня не було'+(m.last!==null?' · останн
 h+='<div class="tl" style="--c:'+META[s].color+'">'+ICON[s]+' '+esc(META[s].name)+': '+t+'</div>';
 });
 h+='<h4>Відставання від плану</h4><p class="meta">'+(lag?ICON[lag.s]+' <b>'+esc(META[lag.s].name)+'</b>: потрібно ≈'+lag.need.toFixed(1)+' тем/тиждень ('+lag.how+'), закрито '+d.closed[lag.s]+'.':'Помітного відставання немає ✅')+'</p>';
-h+='<div class="rec"><b>💡 Рекомендація на наступний тиждень</b><br>'+esc(recommend(d,lag))+'</div>';
+h+='<div class="rec"><b>💡 Рекомендація на наступний тиждень</b><br>'+esc(recommend(d,lag))+'</div>'; h+=aiWeekHTML(d,lag);
 return h+'</details>';
 }
 
