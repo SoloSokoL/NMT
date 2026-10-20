@@ -5,7 +5,7 @@ var AI_URL='https://ТВІЙ-ВОРКЕР.workers.dev'; // ← встав адр
 var AI_SYS='Ти — репетитор з підготовки до НМТ в Україні. Відповідай українською, стисло й по суті, без markdown-розмітки. Якщо не впевнений у факті, даті чи правилі — прямо скажи про це, нічого не вигадуй.';
 
 function aiToken(){ try{ return localStorage.getItem('nmt-ai-token')||''; }catch(e){ return ''; } }
-function aiReady(){ return AI_URL.indexOf('https://icy-mountain-e330.lev-bukay.workers.dev/')<0; }
+function aiReady(){ return AI_URL.indexOf(https://icy-mountain-e330.lev-bukay.workers.dev/)<0; }
 
 // cb(текст, помилка). Рівно один із двох заповнений.
 function aiAsk(prompt,system,cb,max){
