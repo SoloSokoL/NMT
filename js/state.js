@@ -300,7 +300,12 @@ Object.keys(x).concat(Object.keys(y)).forEach(function(k){
 var p=fixTopic(x[k]), q=fixTopic(y[k]);
 if(!p||!q){ if(p||q) o[s][k]=p||q; return; }
 var pu=p.upd||0, qu=q.upd||0;
-o[s][k]=pu>qu?p:qu>pu?q:((p.done&&!q.done)?p:q);
+var w=pu>qu?p:qu>pu?q:((p.done&&!q.done)?p:q), l=(w===p)?q:p;
+// результат тесту беремо з того запису, де він новіший, незалежно від того, чий запис новіший загалом
+if(l.pct!==undefined&&(w.pct===undefined||(+l.pts||0)>(+w.pts||0))){
+w=clone(w); w.pct=l.pct; w.pts=l.pts; w.conf=l.conf;
+}
+o[s][k]=w;
 });
 });
 o.del=maxMap(A.del,B.del);

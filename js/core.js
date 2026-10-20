@@ -276,7 +276,17 @@ return h+'</div>';
 // ---- Результат тесту з теми → впевненість ----
 function pctInput(subj,i,d){
 var p=pctOf(d);
-return '<span class="cnt-label">тест %:</span><input class="pc" type="number" inputmode="numeric" min="0" max="100" value="'+(p===null?'':p)+'" aria-label="Результат тесту з теми, відсотків" title="≥80 → 🟢, 50–79 → 🟡, <50 → 🔴 (слабкі теми повторюються частіше)" onchange="pctChange(\''+subj+'\','+i+',this.value)">';
+return '<span class="cnt-label">тест %:</span><input class="pc" type="number" inputmode="numeric" min="0" max="100" value="'+(p===null?'':p)+'" aria-label="Результат тесту з теми, відсотків" title="≥80 → 🟢, 50–79 → 🟡, <50 → 🔴 (слабкі теми повторюються частіше)" oninput="pctDraft(\''+subj+'\','+i+',this.value)" onchange="pctChange(\''+subj+'\','+i+',this.value)">';
+}
+// Тихо зберігає число під час набору (без render і bump), щоб воно не губилося, якщо сторінку перемалюють до виходу з поля
+function pctDraft(subj,i,val){
+var s=String(val).trim(); if(s==='') return;
+var v=Math.round(+s); if(isNaN(v)) return; v=Math.max(0,Math.min(100,v));
+STATE[subj]=STATE[subj]||{};
+var cur=STATE[subj][TID[subj][i]]||{}, n=Date.now();
+cur.pct=v; cur.pts=n; cur.conf=v>=80?3:v>=50?2:1; cur.upd=n;
+STATE[subj][TID[subj][i]]=cur;
+try{ localStorage.setItem('nmt-tracker-state',JSON.stringify(STATE)); }catch(e){}
 }
 function pctChange(subj,i,val){
 LAST_ROW={id:'r-'+subj+'-'+i,kind:'conf'};
