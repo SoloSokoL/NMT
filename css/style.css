@@ -350,3 +350,12 @@ body.srch .subnav .tab.on{opacity:.55}
 .aiin textarea{flex:1;resize:vertical;min-height:44px;font-size:16px}
 .row-sub button.ai-tb{flex-shrink:0;border:none;background:transparent;cursor:pointer;font-size:.9rem;opacity:.55;padding:2px 4px;min-width:28px;min-height:28px}
 .row-sub button.ai-tb:hover,.row-sub button.ai-tb:focus-visible{opacity:1}
+
+/* Тест від ШІ */
+.qz-q{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card2)}
+.qz-t{font-size:.86rem;line-height:1.45;margin-bottom:6px;overflow-wrap:anywhere}
+.card .qzo{display:block;width:100%;text-align:left;margin:4px 0;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:.82rem;line-height:1.35;overflow-wrap:anywhere}
+.card .qzo.good{border-color:#2F9E44;background:color-mix(in srgb,#2F9E44 16%,var(--card2))}
+.card .qzo.bad{border-color:#E03131;background:color-mix(in srgb,#E03131 14%,var(--card2))}
+.card .qzo:disabled{opacity:1;cursor:default}
+.qz-e{margin-top:6px;padding-left:0}

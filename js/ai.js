@@ -1,4 +1,4 @@
-/* ===== ШІ-репетитор (через проксі на Cloudflare Workers) =====
+/* ===== ШІ-репетитор (Google Gemini через проксі на Cloudflare Workers) =====
    Ключ моделі лежить ЛИШЕ в налаштуваннях воркера. APP_TOKEN тепер зберігається в конфігу прогресу (STATE.cfg.ai)
    і синхронізується через хмару разом з рештою даних — вводити його на кожному пристрої не треба.
    Історія чату лишається лише на цьому пристрої (localStorage). Результати ШІ завжди виводяться через esc() — як текст, ніколи як HTML. */
@@ -24,13 +24,13 @@ function aiReady(){ return /^https:\/\/[^\s]+\.workers\.dev$/.test(AI_URL); }
 
 // cb(текст, помилка). Рівно один із двох заповнений. msgs — історія діалогу (новий воркер); prompt лишається для старого воркера.
 // box — об'єкт, куди кладеться AbortController (щоб запит можна було скасувати).
-function aiAsk(prompt,system,cb,max,msgs,box){
+function aiAsk(prompt,system,cb,max,msgs,box,opt){
 if(!aiReady()){ cb(null,'У js/ai.js не вказано адресу воркера (AI_URL).'); return; }
 if(!aiToken()){ cb(null,'Спершу впиши токен у «⚙️ Налаштування ШІ».'); return; }
 if(typeof navigator!=='undefined'&&navigator.onLine===false){ cb(null,'Немає інтернету.'); return; }
-var ctl=window.AbortController?new AbortController():null, tm=setTimeout(function(){ if(ctl) ctl.abort(); },60000);
+var ctl=window.AbortController?new AbortController():null, tm=setTimeout(function(){ if(ctl) ctl.abort(); },opt&&opt.json?90000:60000);
 if(box) box.ctl=ctl;
-var payload={prompt:prompt,system:system||AI_SYS,max:max||600}; if(msgs&&msgs.length) payload.messages=msgs;
+var payload={prompt:prompt,system:system||AI_SYS,max:max||600}; if(msgs&&msgs.length) payload.messages=msgs; if(opt&&opt.json) payload.json=true;
 fetch(AI_URL,{method:'POST',signal:ctl?ctl.signal:undefined,
 headers:{'content-type':'application/json','x-app-token':aiToken()},
 body:JSON.stringify(payload)})
@@ -310,9 +310,10 @@ var has=!!aiToken(), a=UI.ai&&UI.ai.t;
 var h='<details class="card blk box" id="aiBox"'+(isOpen('aiBox',false)?' open':'')+'><summary>🤖 ШІ-репетитор ('+(has?'готовий':'потрібен токен')+')</summary>';
 if(!aiReady()) h+='<p class="meta warn">⚠️ У js/ai.js ще не вказано адресу воркера (AI_URL).</p>';
 h+=aiChatHTML();
+h+='<details class="subd"'+(UI.qz&&UI.qz.st?' open':'')+'><summary>🧪 Тест від ШІ (з перевіркою й підрахунком %)</summary><div id="qz-box">'+qzInner()+'</div></details>';
 var cloud=!!(db&&getSyncCode());
 h+='<details class="subd"'+(!has||UI.aiSetOpen||a?' open':'')+'><summary>⚙️ Налаштування ШІ</summary>';
-h+='<p class="meta">Запити йдуть через твій Cloudflare Worker; ключ моделі в браузері не зберігається. '
+h+='<p class="meta">Запити йдуть через твій Cloudflare Worker до Google Gemini; ключ Gemini лежить лише у воркері й у браузері не зберігається. '
 +(cloud?'Токен зберігається разом із прогресом у хмарі (код синхронізації ☁️) і з\'явиться на інших пристроях сам. Хто знає код синхронізації — може прочитати токен; якщо код потрапив до чужих, зміни APP_TOKEN у воркері й впиши новий.'
 :'Токен зберігається разом із прогресом у цьому браузері. Підключи хмарну синхронізацію (☁️ угорі), щоб він з\'являвся на інших пристроях сам.')+' Історія чату лишається лише на цьому пристрої.</p>';
 h+='<div class="plan-row"><input id="ai-tok" type="password" autocomplete="off" spellcheck="false" placeholder="'+(has?'новий токен (замінить поточний)':'APP_TOKEN з воркера')+'" aria-label="Токен ШІ">'
@@ -336,4 +337,112 @@ if(UI.ai) delete UI.ai.t; UI.aiSetOpen=true; persist(); aiBoxRefresh();
 function aiTest(){
 UI.ai=UI.ai||{}; UI.aiSetOpen=true; UI.ai.t={st:'busy',text:''}; aiBoxRefresh();
 aiAsk('Відповідай одним словом: працює.',AI_SYS,function(t,err){ UI.ai.t=err?{st:'err',text:err}:{st:'ok',text:'Зв\'язок є: '+t}; aiBoxRefresh(); },50);
+}
+
+// ---- 🧪 Тест від ШІ: Gemini складає питання (JSON), перевірка й підрахунок % — у браузері ----
+// Результат можна записати в «тест %» теми — від нього залежить інтервал повторення (≥80% → рідше, <50% → частіше).
+var QZ_DIFF={base:'базового рівня',nmt:'як на реальному НМТ',hard:'підвищеної складності'};
+function qzInit(){
+if(!UI.qz) UI.qz={st:'',err:'',items:[],ans:[],s:'',tp:''};
+if(UI.qzS===undefined) UI.qzS=''; if(UI.qzTp===undefined) UI.qzTp='';
+if(!UI.qzN) UI.qzN=5; if(!UI.qzD) UI.qzD='nmt';
+}
+function qzShuffle(it){
+var idx=[0,1,2,3], i, j, t;
+for(i=3;i>0;i--){ j=Math.floor(Math.random()*(i+1)); t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
+return {q:it.q,o:idx.map(function(k){ return it.o[k]; }),a:idx.indexOf(it.a),e:it.e};
+}
+// Приймає відповідь моделі, повертає лише коректні питання (рівно 4 варіанти, індекс правильного 0–3); варіанти перемішуються
+function qzParse(text){
+var t=String(text||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+var a, out=[], m;
+try{ a=JSON.parse(t); }catch(e){ m=/\[[\s\S]*\]/.exec(t); if(!m) return out; try{ a=JSON.parse(m[0]); }catch(e2){ return out; } }
+if(a&&!Array.isArray(a)&&Array.isArray(a.questions)) a=a.questions;
+if(!Array.isArray(a)) return out;
+a.slice(0,15).forEach(function(x){
+if(!x||typeof x.q!=='string'||!x.q.trim()||x.q.length>700||!Array.isArray(x.o)||x.o.length!==4) return;
+var ok=x.o.every(function(s){ return typeof s==='string'&&s.trim()&&s.length<=300; });
+var k=Math.round(+x.a);
+if(!ok||!(k>=0&&k<=3)) return;
+out.push(qzShuffle({q:x.q.trim(),o:x.o.map(function(s){ return s.trim(); }),a:k,e:typeof x.e==='string'?x.e.trim().slice(0,600):''}));
+});
+return out;
+}
+function qzRefresh(){ var el=document.getElementById('qz-box'); if(el) el.innerHTML=hx(qzInner()); }
+function qzSetSubj(v){
+qzInit(); UI.qzS=META[v]?v:''; UI.qzTp='';
+var el=document.getElementById('qz-tp'); if(el) el.innerHTML=topicOpts(UI.qzS,'');
+}
+function qzGen(){
+qzInit(); if(UI.qz.st==='busy') return;
+var s=UI.qzS;
+if(!s||!META[s]){ UI.qz.st='err'; UI.qz.err='Спершу обери предмет.'; qzRefresh(); return; }
+var i=UI.qzTp?TID[s].indexOf(UI.qzTp):-1;
+var topic=i>=0?TOPICS[s][i]:'різні теми програми НМТ з цього предмета';
+var n=UI.qzN===10?10:5, d=QZ_DIFF[UI.qzD]||QZ_DIFF.nmt;
+var p='Склади '+n+' тестових завдань '+d+' (НМТ, Україна) з предмета «'+META[s].name+'» за темою: '+topic+'. '
++'Мова завдань відповідає предмету (англійська — англійською, решта — українською). Кожне завдання має рівно 4 варіанти відповіді, правильний лише один. '
++'Формули записуй простим текстом (x^2, sqrt(x), 1/2). Завдання не повинні повторюватися. '
++'Поверни ЛИШЕ JSON-масив об\'єктів виду {"q":"текст завдання","o":["варіант","варіант","варіант","варіант"],"a":0,"e":"пояснення правильної відповіді в 1–2 реченнях"}, '
++'де a — індекс правильного варіанта (0–3). Без markdown і без тексту поза JSON.';
+var cur={st:'busy',err:'',items:[],ans:[],s:s,tp:i>=0?UI.qzTp:'',saved:false};
+UI.qz=cur; qzRefresh();
+aiAsk(p,AI_SYS,function(text,err){
+if(UI.qz!==cur) return;
+if(err){ cur.st='err'; cur.err=err; }
+else{
+var items=qzParse(text);
+if(!items.length){ cur.st='err'; cur.err='ШІ повернув тест у незрозумілому форматі. Спробуй ще раз.'; }
+else{ cur.st='ok'; cur.items=items; dstatAi(); }
+}
+qzRefresh();
+},n===10?3500:2200,null,null,{json:true});
+}
+function qzPick(i,j){
+var q=UI.qz; if(!q||q.st!=='ok'||!q.items[i]||q.ans[i]!==undefined) return;
+q.ans[i]=j; qzRefresh();
+}
+function qzScore(q){ var k=0; q.items.forEach(function(it,j){ if(q.ans[j]===it.a) k++; }); return k; }
+function qzSavePct(){
+var q=UI.qz; if(!q||q.st!=='ok'||q.saved) return;
+var i=q.tp?TID[q.s].indexOf(q.tp):-1; if(i<0) return;
+var done=0; q.items.forEach(function(it,j){ if(q.ans[j]!==undefined) done++; });
+if(done!==q.items.length) return;
+q.saved=true;
+pctChange(q.s,i,Math.round(qzScore(q)*100/q.items.length));
+}
+function qzInner(){
+qzInit();
+var q=UI.qz, busy=q.st==='busy', h='';
+h+='<div class="aictx"><select id="qz-sj" aria-label="Предмет для тесту" onchange="qzSetSubj(this.value)"><option value="">— предмет —</option>'
++ORDER.map(function(s){ return '<option value="'+s+'"'+(UI.qzS===s?' selected':'')+'>'+ICON[s]+' '+esc(META[s].name)+'</option>'; }).join('')+'</select>'
++'<select id="qz-tp" aria-label="Тема для тесту" onchange="UI.qzTp=this.value">'+topicOpts(UI.qzS,UI.qzTp)+'</select></div>';
+h+='<div class="aictx"><select aria-label="Кількість питань" onchange="UI.qzN=+this.value"><option value="5"'+(UI.qzN===5?' selected':'')+'>5 питань</option><option value="10"'+(UI.qzN===10?' selected':'')+'>10 питань</option></select>'
++'<select aria-label="Складність" onchange="UI.qzD=this.value"><option value="base"'+(UI.qzD==='base'?' selected':'')+'>Базовий</option><option value="nmt"'+(UI.qzD==='nmt'?' selected':'')+'>Як на НМТ</option><option value="hard"'+(UI.qzD==='hard'?' selected':'')+'>Складніший</option></select>'
++'<button type="button" class="ok"'+(busy?' disabled':'')+' onclick="qzGen()">🧪 Створити тест</button></div>';
+if(busy) return h+'<div class="en" role="status">🤖 Складаю тест…</div>';
+if(q.st==='err') return h+'<div class="en" role="alert">⚠️ '+esc(q.err)+'</div>';
+if(q.st!=='ok') return h+'<p class="meta">Обери предмет і тему — ШІ складе тест; відповідай, і одразу побачиш правильну відповідь з поясненням та підсумок у %.</p>';
+var answered=0;
+q.items.forEach(function(it,i){
+var an=q.ans[i];
+if(an!==undefined) answered++;
+h+='<div class="qz-q"><div class="qz-t">'+(i+1)+'. '+esc(it.q)+'</div>';
+it.o.forEach(function(o,j){
+var cls='qzo', mark='';
+if(an!==undefined){ if(j===it.a){ cls+=' good'; mark=' ✅'; } else if(j===an){ cls+=' bad'; mark=' ❌'; } }
+h+='<button type="button" class="'+cls+'"'+(an!==undefined?' disabled':'')+' onclick="qzPick('+i+','+j+')">'+String.fromCharCode(65+j)+') '+esc(o)+mark+'</button>';
+});
+if(an!==undefined&&it.e) h+='<div class="meta qz-e">'+esc(it.e)+'</div>';
+h+='</div>';
+});
+if(answered===q.items.length){
+var k=qzScore(q), n=q.items.length, pc=Math.round(k*100/n), ti=q.tp?TID[q.s].indexOf(q.tp):-1;
+h+='<div class="en" role="status"><b>Результат: '+k+' з '+n+' ('+pc+'%)</b></div><div class="plan-row">';
+if(ti>=0&&!q.saved) h+='<button type="button" class="ok" onclick="qzSavePct()">📌 Записати '+pc+'% як «тест %» теми</button>';
+if(q.saved) h+='<span class="meta">✓ Записано в «тест %» теми</span>';
+h+='<button type="button" onclick="qzGen()">🔁 Новий тест</button></div>';
+if(ti<0) h+='<p class="meta">Щоб записати результат у «тест %», обери конкретну тему. Від «тест %» залежить інтервал повторення: ≥80% — рідше, &lt;50% — частіше.</p>';
+}
+return h;
 }

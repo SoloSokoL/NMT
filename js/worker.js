@@ -1,9 +1,10 @@
-// Cloudflare Worker: проксі між сайтом і Cloudflare Workers AI (безкоштовно, без стороннього ключа).
-// Налаштування (Workers → Settings):
-//   Bindings → Add → Workers AI, назва змінної: AI
-//   MODEL        — (необов'язково) змінна з назвою моделі зі списку Workers AI; за замовчуванням див. нижче
-//   APP_TOKEN     — секрет: довгий випадковий рядок (його ж вписуєш у блоці «🤖 ШІ» на сайті)
-//   ALLOW_ORIGIN  — звичайна змінна: https://ТВІЙ-НІК.github.io (без слеша в кінці й без шляху)
+// Cloudflare Worker: проксі між сайтом і Google Gemini API. Ключ Gemini лежить ЛИШЕ тут (в браузер не потрапляє).
+// Налаштування (Workers → Settings → Variables and Secrets):
+//   GEMINI_API_KEY — секрет: ключ із https://aistudio.google.com/apikey (безкоштовний, з лімітами)
+//   APP_TOKEN      — секрет: довгий випадковий рядок (той самий, що вписано в блоці «🤖 ШІ» на сайті)
+//   ALLOW_ORIGIN   — змінна: https://ТВІЙ-НІК.github.io (без слеша в кінці й без шляху)
+//   MODEL          — (необов'язково) назва моделі Gemini, напр. gemini-3.8-flash; за замовчуванням gemini-flash-latest
+// Binding «Workers AI» (змінна AI) більше не потрібен.
 export default {
   async fetch(req, env) {
     const cors = {
@@ -18,11 +19,13 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
     if (req.method !== 'POST') return json({ error: 'method' }, 405);
     if (!env.APP_TOKEN || req.headers.get('x-app-token') !== env.APP_TOKEN) return json({ error: 'forbidden' }, 403);
+    if (!env.GEMINI_API_KEY) return json({ error: 'no GEMINI_API_KEY' }, 500);
 
     let body;
     try { body = await req.json(); } catch (e) { return json({ error: 'bad json' }, 400); }
-    const max = Math.max(50, Math.min(1500, parseInt(body.max, 10) || 600));
-    const model = env.MODEL || '@cf/nvidia/nemotron-3-120b-a12b';
+    const wantJson = body.json === true; // режим тестів: модель повертає чистий JSON
+    const max = Math.max(50, Math.min(wantJson ? 4000 : 1500, parseInt(body.max, 10) || 600));
+    const model = String(env.MODEL || 'gemini-flash-latest').replace(/[^\w.\-]/g, '');
     const system = String(body.system || '').slice(0, 4000);
     // Діалог: body.messages = [{role:'user'|'assistant', content}] (до 14 останніх). Старий формат body.prompt теж працює.
     let dialog = [];
@@ -37,15 +40,35 @@ export default {
       if (!prompt) return json({ error: 'empty' }, 400);
       dialog = [{ role: 'user', content: prompt }];
     }
-    const messages = (system ? [{ role: 'system', content: system }] : []).concat(dialog);
-    let d;
+
+    const payload = {
+      contents: dialog.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+      // maxOutputTokens у Gemini включає «думання» моделі, тож додаємо запас, щоб відповідь не обрізалась
+      generationConfig: { maxOutputTokens: max + 2048, temperature: wantJson ? 0.8 : 0.6 }
+    };
+    if (system) payload.systemInstruction = { parts: [{ text: system }] };
+    if (wantJson) payload.generationConfig.responseMimeType = 'application/json';
+
+    let r;
     try {
-      d = await env.AI.run(model, { messages, max_tokens: max });
+      r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+        body: JSON.stringify(payload)
+      });
     } catch (e) {
-      return json({ error: 'ai: ' + String((e && e.message) || e).slice(0, 200) }, 502);
+      return json({ error: 'gemini: ' + String((e && e.message) || e).slice(0, 200) }, 502);
     }
-    // різні моделі повертають або {response}, або формат OpenAI {choices:[{message:{content}}]}
-    const text = String((d && (d.response || (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content))) || '');
+    if (r.status === 429) return json({ error: 'rate' }, 429);
+    if (!r.ok) {
+      let msg = '';
+      try { const e = await r.json(); msg = (e && e.error && e.error.message) || ''; } catch (e) {}
+      return json({ error: 'gemini ' + r.status + ': ' + String(msg).slice(0, 200) }, 502);
+    }
+    let d;
+    try { d = await r.json(); } catch (e) { return json({ error: 'gemini: bad response' }, 502); }
+    const parts = (d && d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [];
+    const text = parts.filter(p => p && !p.thought).map(p => String(p.text || '')).join('').trim();
     return json({ text });
   }
 };
