@@ -25,12 +25,16 @@ return t.getTime();
 }
 function doneTs(d){ return d.ts||parseDM(d.date); }
 function lastTs(d){ return d.last||doneTs(d); }
-// Через скільки днів повторити (<=0 — вже час). Слабкі теми (🔴) повторюються удвічі частіше.
+// Через скільки днів повторити (<=0 — вже час). Слабкі теми (🔴) повторюються удвічі частіше,
+// а теми з останнім «тест %» ≥80 — удвічі рідше (інтервал × REV_STRONG).
+var REV_STRONG=2;
 function dueIn(d){
 if(!d||!d.done) return null;
 var l=lastTs(d); if(!l) return null;
 var iv=REV[Math.min(d.rv||0,REV.length-1)];
+var p=pctOf(d);
 if(confOf(d)===1) iv=Math.max(1,Math.ceil(iv/2));
+else if(p!==null&&p>=80) iv=Math.ceil(iv*REV_STRONG);
 return Math.ceil((l+iv*DAY-Date.now())/DAY);
 }
 function isDue(d){ var x=dueIn(d); return x!==null&&x<=0; }
@@ -276,7 +280,7 @@ return h+'</div>';
 // ---- Результат тесту з теми → впевненість ----
 function pctInput(subj,i,d){
 var p=pctOf(d);
-return '<span class="cnt-label">тест %:</span><input class="pc" type="number" inputmode="numeric" min="0" max="100" value="'+(p===null?'':p)+'" aria-label="Результат тесту з теми, відсотків" title="≥80 → 🟢, 50–79 → 🟡, <50 → 🔴 (слабкі теми повторюються частіше)" oninput="pctDraft(\''+subj+'\','+i+',this.value)" onchange="pctChange(\''+subj+'\','+i+',this.value)">';
+return '<span class="cnt-label">тест %:</span><input class="pc" type="number" inputmode="numeric" min="0" max="100" value="'+(p===null?'':p)+'" aria-label="Результат тесту з теми, відсотків" title="≥80 → 🟢, 50–79 → 🟡, <50 → 🔴 (слабкі теми повторюються частіше, а ≥80% — удвічі рідше)" oninput="pctDraft(\''+subj+'\','+i+',this.value)" onchange="pctChange(\''+subj+'\','+i+',this.value)">';
 }
 // Тихо зберігає число під час набору (без render і bump), щоб воно не губилося, якщо сторінку перемалюють до виходу з поля
 function pctDraft(subj,i,val){
