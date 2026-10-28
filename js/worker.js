@@ -26,7 +26,7 @@ export default {
     const wantJson = body.json === true; // режим тестів: модель повертає чистий JSON
     const max = Math.max(50, Math.min(wantJson ? 4000 : 1500, parseInt(body.max, 10) || 600));
     const model = String(env.MODEL || 'gemini-flash-latest').replace(/[^\w.\-]/g, '');
-    const system = String(body.system || '').slice(0, 4000);
+    const system = String(body.system || '').slice(0, 12000);
     // Діалог: body.messages = [{role:'user'|'assistant', content}] (до 14 останніх). Старий формат body.prompt теж працює.
     let dialog = [];
     if (Array.isArray(body.messages)) {

@@ -56,7 +56,7 @@ function aiRun(key,prompt,max){
 UI.ai=UI.ai||{};
 if(UI.ai[key]&&UI.ai[key].st==='busy') return;
 UI.ai[key]={st:'busy',text:''}; aiRefresh(key);
-aiAsk(prompt,AI_SYS,function(text,err){
+aiAsk(prompt,(key.charAt(0)==='c'?AI_SYS:aiSys()),function(text,err){
 UI.ai[key]=err?{st:'err',text:err}:{st:'ok',text:text};
 if(key.charAt(0)==='c'&&!err) UI.aiCards=aiCleanCards(text);
 aiRefresh(key);
@@ -159,7 +159,7 @@ function aiSaveChat(){ lsSet('nmt-ai-chat',JSON.stringify((UI.chat||[]).slice(-A
 function aiChatInit(){
 if(UI.chat) return;
 UI.chat=aiLoadChat(); UI.chatSt=''; UI.chatErr=''; UI.chatTok=0; UI.aiIn='';
-UI.aiCtx=lsGet('nmt-ai-ctx')!=='0'; UI.aiLen=lsGet('nmt-ai-len')==='long'?'long':'short';
+UI.aiCtx=lsGet('nmt-ai-ctx')!=='0'; // за замовчуванням ШІ бачить увесь прогрес UI.aiLen=lsGet('nmt-ai-len')==='long'?'long':'short';
 UI.aiS=UI.aiS||''; UI.aiTp=UI.aiTp||'';
 }
 function aiTopicInfo(){
@@ -167,25 +167,50 @@ var s=UI.aiS; if(!s||!META[s]) return '';
 var i=UI.aiTp?TID[s].indexOf(UI.aiTp):-1;
 return META[s].name+(i>-1?': '+TOPICS[s][i]:'');
 }
-// Короткий зріз прогресу для підказки моделі (без зайвих персональних даних)
+// Повний зріз знань учня для моделі: прогрес, тести %, пробники, помилки, картки, активність. Найважливіше — на початку (воркер може обрізати хвіст).
+function aiPct(a){ var n=0,k=0; a.forEach(function(x){ if(x!==null&&isFinite(x)){ n+=x; k++; } }); return k?Math.round(n/k):null; }
 function aiContext(){
-var L=[], dl=examDl(), wd=(new Date().getDay()+6)%7;
-if(dl>0) L.push('До НМТ залишилось днів: '+dl);
-L.push('Розклад на сьогодні: '+((SCHED[wd]||[]).map(function(s){ return META[s].name; }).join(', ')||'повторення'));
+var L=[], dl=examDl(), wd=(new Date().getDay()+6)%7, CF=['без оцінки','слабко','так собі','добре'];
+L.push('Сьогодні: '+isoDay(Date.now())+(dl>0?'; до НМТ '+dl+' дн.':'')+'; серія днів: '+streak()+'; розклад на сьогодні: '+((SCHED[wd]||[]).map(function(s){ return META[s].name; }).join(', ')||'повторення'));
+var wk=weekData(0); L.push('Цей тиждень: тем закрито '+wk.tot+', повторень '+wk.rv+', карток '+wk.cr+', помилок виправлено '+wk.fx+', додано '+wk.add+', активних днів '+wk.days+'/7');
 ORDER.forEach(function(s){
-var done=0, i; for(i=0;i<TID[s].length;i++){ var e=ST(s,i); if(e&&e.done) done++; }
-var arr=(STATE.mockLog&&STATE.mockLog[s])||[], last=arr.length?arr[arr.length-1].score:null, g=cfgGet('goal:'+s);
-L.push(META[s].name+': тем '+done+'/'+TID[s].length+(last!==null?', останній пробник '+last:'')+((g!==undefined&&g!=='')?', ціль '+g:''));
-});
-var w=weakList().slice(0,6).map(function(o){ return TOPICS[o.s][o.i]+(o.p!==null?' ('+o.p+'%)':''); });
-if(w.length) L.push('Слабкі теми: '+w.join('; '));
-L.push('На повторення: тем '+dueTopics().length+', помилок '+dueErrs().length);
-return L.join('\n');
+var done=0, ps=[], rows=[], star=[], i, e, p;
+for(i=0;i<TID[s].length;i++){
+e=ST(s,i); p=pctOf(e);
+if(e&&e.done) done++;
+if(p!==null){ ps.push(p); rows.push({t:TOPICS[s][i],p:p,c:confOf(e),d:e.date||''}); }
+else if(e&&e.done&&e.conf) rows.push({t:TOPICS[s][i],p:null,c:e.conf,d:e.date||''});
+if(wOf(TID[s][i])&&!(e&&e.done)) star.push(TOPICS[s][i]);
 }
+var mk=(STATE.mockLog&&STATE.mockLog[s])||[], g=cfgGet('goal:'+s);
+var h='\n['+META[s].name+'] тем пройдено '+done+'/'+TID[s].length+' ('+Math.round(done/TID[s].length*100)+'%)';
+var av=aiPct(ps); h+='; середній «тест %» по темах: '+(av===null?'немає даних':av+'% ('+ps.length+' тем)');
+h+='; пробники: '+(mk.length?mk.slice(-5).map(function(m){ return m.date+' — '+m.score+(m.errs!=null?' (помилок '+m.errs+')':''); }).join(', '):'немає')+'; ціль: '+((g!==undefined&&g!=='')?g:'не задано');
+L.push(h);
+rows.sort(function(x,y){ return (x.p===null?101:x.p)-(y.p===null?101:y.p); });
+if(rows.length) L.push('Результати за темами (від найслабших; «тест %», впевненість): '+rows.slice(0,25).map(function(r){ return r.t+' — '+(r.p!==null?r.p+'%':'без %')+', '+CF[r.c||0]; }).join('; ')+(rows.length>25?'; …ще '+(rows.length-25):''));
+var nx=openTopics(s,2).map(function(k){ return TOPICS[s][k]; }); if(nx.length) L.push('Найближчі нові теми: '+nx.join('; '));
+if(star.length) L.push('Важливі (★, більше балів на НМТ), ще не пройдені: '+star.slice(0,8).join('; ')+(star.length>8?'; …ще '+(star.length-8):''));
+});
+var due=dueTopics().slice(0,8).map(function(o){ return TOPICS[o.s][o.i]; });
+L.push('На повторення сьогодні: тем '+dueTopics().length+(due.length?' ('+due.join('; ')+')':'')+', помилок '+dueErrs().length+', карток '+cardsDueCount(''));
+var er=errsAll().filter(function(e){ return !e.fixed; }), cnt=[0,0,0,0]; er.forEach(function(e){ cnt[e.w|0]++; });
+if(er.length){
+L.push('Активні помилки: '+er.length+'; причини: '+ERR_WHY.map(function(w,i){ return w+' '+cnt[i]; }).join(', '));
+L.push('Останні помилки: '+er.slice(-8).map(function(e){ var tp=errTopic(e); return META[e.subj].name+(tp?' / '+tp:'')+': '+e.t; }).join(' | '));
+}
+var dk=decksLive().map(function(d){ return d.name+' ('+cardsOf(d.id).length+' карток, '+cardsDueCount(d.id)+' до повторення)'; });
+if(dk.length) L.push('Колоди карток: '+dk.join('; '));
+var notes=[]; ORDER.forEach(function(s){ for(var i=0;i<TID[s].length;i++){ var e=ST(s,i); if(e&&e.note) notes.push(TOPICS[s][i]+': '+e.note); } });
+if(notes.length) L.push('Нотатки учня до тем: '+notes.slice(0,8).join(' | '));
+return L.join('\n').slice(0,9000);
+}
+// Системна підказка з повним контекстом (для всіх запитів до ШІ, окрім чистої генерації тестів і карток)
+function aiSys(){ return AI_SYS+'\nДані учня з тренажера (спирайся лише на них, нічого не вигадуй; якщо даних бракує — скажи про це):\n'+aiContext(); }
 function aiChatSys(force){
 var s=AI_SYS+' Ти ведеш діалог з учнем: враховуй попередні повідомлення. '+(UI.aiLen==='long'?'Відповідай докладно (до ~1200 символів), з прикладами.':'Відповідай коротко (до ~500 символів).');
 var t=aiTopicInfo(); if(t) s+='\nПоточна тема розмови: '+t+'.';
-if(UI.aiCtx||force) s+='\nДані учня (спирайся лише на них, інших не вигадуй):\n'+aiContext();
+if(UI.aiCtx||force) s+='\nДані учня з тренажера (спирайся лише на них, нічого не вигадуй):\n'+aiContext();
 return s;
 }
 function aiChatRefresh(focus){
@@ -297,7 +322,7 @@ if(UI.chatErr) h+='<div class="am a" role="alert"><div class="am-t">⚠️ '+esc
 h+='</div>';
 h+='<div class="aiin"><textarea id="ai-in" rows="2" maxlength="1500" aria-label="Повідомлення репетитору" placeholder="Запитай або встав завдання…  (Enter — надіслати, Shift+Enter — новий рядок)" oninput="UI.aiIn=this.value" onkeydown="aiKey(event)">'+esc(UI.aiIn||'')+'</textarea>'
 +(busy?'<button type="button" onclick="aiStop()">⏹ Стоп</button>':'<button type="button" class="ok" onclick="aiSendInput()">Надіслати</button>')+'</div>';
-h+='<div class="aictx"><label class="chk"><input type="checkbox"'+(UI.aiCtx?' checked':'')+' onchange="aiSetCtx(this.checked)"> Враховувати мій прогрес</label>'
+h+='<div class="aictx"><label class="chk"><input type="checkbox"'+(UI.aiCtx?' checked':'')+' onchange="aiSetCtx(this.checked)"> ШІ бачить мій прогрес, тести й помилки</label>'
 +'<select aria-label="Довжина відповіді" onchange="aiSetLen(this.value)"><option value="short"'+(UI.aiLen==='short'?' selected':'')+'>Коротко</option><option value="long"'+(UI.aiLen==='long'?' selected':'')+'>Докладно</option></select>'
 +'<button type="button" onclick="aiClearChat()"'+(UI.chat.length?'':' disabled')+'>🗑 Очистити розмову</button></div>';
 return h;

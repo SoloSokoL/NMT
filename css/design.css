@@ -1,0 +1,88 @@
+/* ===== Дизайн-шар: палітра, типографіка, картки, кнопки, вкладки. Підключається ПІСЛЯ style.css і перекриває його токени. ===== */
+:root{--bg:#F3F5FB;--ink:#161B2E;--sub:#5F6880;--line:#E1E6F2;--card:#EEF1F9;--card2:#FFFFFF;--acc:#4F46E5;--acc2:#7C3AED;--ok:#16A34A;--bad:#DC2626;--r:18px;
+--shadow:0 1px 2px rgba(22,27,46,.04),0 10px 30px -14px rgba(22,27,46,.18);--shadow-sm:0 1px 2px rgba(22,27,46,.05),0 4px 12px -6px rgba(22,27,46,.1)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0E1120;--ink:#E9ECF8;--sub:#98A1BA;--line:#262B45;--card:#1A1F36;--card2:#151A2E;--shadow:0 10px 30px -14px rgba(0,0,0,.6);--shadow-sm:0 4px 12px -6px rgba(0,0,0,.5)}}
+html[data-theme=dark]{--bg:#0E1120;--ink:#E9ECF8;--sub:#98A1BA;--line:#262B45;--card:#1A1F36;--card2:#151A2E;--shadow:0 10px 30px -14px rgba(0,0,0,.6);--shadow-sm:0 4px 12px -6px rgba(0,0,0,.5)}
+html[data-theme=light]{--bg:#F3F5FB;--ink:#161B2E;--sub:#5F6880;--line:#E1E6F2;--card:#EEF1F9;--card2:#FFFFFF}
+body{background:var(--bg) radial-gradient(900px 420px at 15% -8%,color-mix(in srgb,var(--acc) 14%,transparent),transparent),radial-gradient(700px 380px at 95% 0%,color-mix(in srgb,var(--acc2) 10%,transparent),transparent) no-repeat;font-size:15px;line-height:1.5;letter-spacing:-.003em}
+.wrap{max-width:720px;padding:20px 16px 96px}
+@media(min-width:900px){.wrap{max-width:1040px;padding-top:32px}}
+#app h1{font-size:1.7rem;font-weight:700;letter-spacing:-.025em;background:linear-gradient(100deg,var(--ink) 30%,var(--acc) 75%,var(--acc2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sec{margin:0 0 28px}
+.sec-h{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sub)}
+#app .card,#app .overall,.card{background:var(--card2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:16px 18px}
+@media(hover:hover){#app .card:hover{transform:none;box-shadow:var(--shadow)}}
+.card h3{font-size:1.02rem;font-weight:700}
+.card h4{font-size:.78rem;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 4px}
+.card summary,details.card>summary{font-weight:650;font-size:.98rem}
+/* «Що робити зараз» — головна картка */
+#app .card.now{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;box-shadow:0 18px 40px -18px color-mix(in srgb,var(--acc) 70%,transparent);padding:20px 22px}
+.card.now .now-k{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+.card.now .now-t{display:block;color:#fff;font-size:1.2rem;font-weight:650;line-height:1.35;margin:6px 0 8px;text-decoration:none}
+.card.now .meta,.card.now .now-n,.card.now a{color:rgba(255,255,255,.88)}
+.card.now .rv{background:rgba(255,255,255,.14);border-radius:12px;padding:6px 10px;border-left:3px solid #fff}
+.card.now .rv a{color:#fff}
+.card.now button{background:rgba(255,255,255,.22);color:#fff}
+/* кнопки й поля */
+.card button,.sync button,.mock button,button.dk{font-weight:600;font-size:.78rem;border-radius:10px;padding:7px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);transition:transform .12s,background .15s,border-color .15s}
+.card button:hover,.sync button:hover,.mock button:hover{border-color:var(--acc)}
+.card button.ok,.mock button[type=submit],button.pri,.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.card button.ok:hover{filter:brightness(1.08)}
+.card button:active{transform:scale(.97)}
+input[type=text],input[type=number],input[type=search],input[type=date],input[type=password],select,textarea{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in srgb,var(--acc) 55%,transparent);outline-offset:1px;border-color:var(--acc)}
+.pill{background:color-mix(in srgb,var(--acc) 12%,var(--card2));color:var(--acc);font-weight:650;border-radius:999px;padding:3px 10px}
+/* вкладки предметів — сегментований перемикач */
+.subnav{display:flex;gap:6px;padding:5px;background:var(--card);border-radius:16px;border:1px solid var(--line);overflow-x:auto;scrollbar-width:none;position:sticky;top:8px;z-index:20;backdrop-filter:blur(10px)}
+.subnav::-webkit-scrollbar{display:none}
+#app .subnav .tab{flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;background:transparent;color:var(--sub);padding:9px 12px;font-weight:600;box-shadow:none;border-bottom:none}
+#app .subnav .tab b{font-size:.7rem;background:var(--card2);border-radius:99px;padding:1px 7px;color:var(--ink)}
+#app .subnav .tab.on{background:var(--card2);color:var(--ink);box-shadow:var(--shadow-sm),inset 0 -3px 0 var(--c)}
+@media(max-width:520px){.subnav .tn{display:none}}
+/* предмети й теми */
+#app .subject{border-radius:var(--r);padding:18px 18px 8px}
+#app .subject::before{height:5px}
+#app .subject h2{font-size:1.25rem;font-weight:700}
+#app .bar{height:10px;border-radius:99px;background:var(--card)}
+#app .bar i{border-radius:99px;background:var(--c,var(--acc))}
+.overall .bar i{background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.block-h{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--c);margin:22px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+#app .row{border-bottom:1px solid var(--line);border-radius:12px;padding:10px 6px;transition:background .15s}
+#app .row:hover{background:color-mix(in srgb,var(--c,var(--acc)) 6%,transparent)}
+#app .row .t{font-weight:550}
+#app .row-main input[type=checkbox]{accent-color:var(--c,var(--acc));width:19px;height:19px}
+.lnk{border-radius:10px}
+.row-sub .n,.row-sub .pc{background:var(--card);border:1px solid transparent;border-radius:8px;padding:5px 8px}
+.row-sub .n:focus,.row-sub .pc:focus{background:var(--card2);border-color:var(--acc)}
+.wtg.w-h{color:#F59E0B}
+.mock{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--line)}
+.mock .chip{background:var(--card2);border:1px solid var(--line);border-radius:99px}
+.toolgrid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:760px){.toolgrid{grid-template-columns:1fr 1fr;align-items:start}}
+.dash{gap:14px}
+.rhythm{gap:6px}
+.rhythm .day{background:var(--card2);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-sm)}
+.tools{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow-sm)}
+.tools input[type=search]{border:none;background:var(--card)}
+/* ШІ-чат */
+.aichat{background:var(--card);border-radius:14px;padding:10px;max-height:420px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.am{max-width:88%;padding:9px 12px;border-radius:16px;line-height:1.45;white-space:pre-wrap}
+.am.u{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:5px}
+.am.a{align-self:flex-start;background:var(--card2);border:1px solid var(--line);border-bottom-left-radius:5px}
+.am-b{display:flex;gap:6px;margin-top:6px}
+.aiin{display:flex;gap:8px;align-items:flex-end;margin-top:8px}.aiin textarea{flex:1}
+.qzo{display:block;width:100%;text-align:left;margin:5px 0;background:var(--card2)!important}
+.qzo.good{background:color-mix(in srgb,var(--ok) 18%,var(--card2))!important;border-color:var(--ok)!important}
+.qzo.bad{background:color-mix(in srgb,var(--bad) 16%,var(--card2))!important;border-color:var(--bad)!important}
+.er{border-radius:12px;background:var(--card);border-bottom:none;margin:8px 0;padding:10px 12px!important}
+.legend-d,.foot{color:var(--sub)}
+::selection{background:color-mix(in srgb,var(--acc) 30%,transparent)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#app .card.now .now-k{color:#fff;opacity:.85}
+#app .card.now .now-t b{font-weight:700}
+/* без горизонтального скролу на телефоні */
+.toolgrid{grid-template-columns:minmax(0,1fr)}
+@media(min-width:760px){.toolgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.toolgrid>*,.dash>*,.card{min-width:0;max-width:100%}
+.card select,.card input[type=text],.card textarea,.fl select,.fl input{max-width:100%}
+.top{flex-wrap:wrap}.top-t{flex:1 1 220px}
