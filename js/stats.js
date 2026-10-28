@@ -40,7 +40,7 @@ if(deficit>=1&&(!best||deficit>best.deficit)) best={s:s,need:need,deficit:defici
 return best;
 }
 function recommend(d,lag){
-var eo=dueErrs().filter(errOverdue);
+var eo=[];
 if(eo.length) return 'Зроби фокус на журналі помилок: прострочено '+eo.length+' '+pl(eo.length,['помилка','помилки','помилок'])+' — розбери їх у перші два дні тижня, поки вони не накопичились.';
 if(lag) return 'Зроби фокус на предметі «'+META[lag.s].name+'»: закрий щонайменше '+Math.max(1,Math.ceil(lag.need))+' '+pl(Math.max(1,Math.ceil(lag.need)),['тему','теми','тем'])+' (потрібно ≈'+lag.need.toFixed(1)+' на тиждень, зараз відставання ≈'+lag.deficit.toFixed(1)+').';
 var w=weakList();

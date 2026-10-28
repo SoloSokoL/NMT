@@ -193,14 +193,7 @@ var nx=openTopics(s,2).map(function(k){ return TOPICS[s][k]; }); if(nx.length) L
 if(star.length) L.push('Важливі (★, більше балів на НМТ), ще не пройдені: '+star.slice(0,8).join('; ')+(star.length>8?'; …ще '+(star.length-8):''));
 });
 var due=dueTopics().slice(0,8).map(function(o){ return TOPICS[o.s][o.i]; });
-L.push('На повторення сьогодні: тем '+dueTopics().length+(due.length?' ('+due.join('; ')+')':'')+', помилок '+dueErrs().length+', карток '+cardsDueCount(''));
-var er=errsAll().filter(function(e){ return !e.fixed; }), cnt=[0,0,0,0]; er.forEach(function(e){ cnt[e.w|0]++; });
-if(er.length){
-L.push('Активні помилки: '+er.length+'; причини: '+ERR_WHY.map(function(w,i){ return w+' '+cnt[i]; }).join(', '));
-L.push('Останні помилки: '+er.slice(-8).map(function(e){ var tp=errTopic(e); return META[e.subj].name+(tp?' / '+tp:'')+': '+e.t; }).join(' | '));
-}
-var dk=decksLive().map(function(d){ return d.name+' ('+cardsOf(d.id).length+' карток, '+cardsDueCount(d.id)+' до повторення)'; });
-if(dk.length) L.push('Колоди карток: '+dk.join('; '));
+L.push('На повторення сьогодні: тем '+dueTopics().length+(due.length?' ('+due.join('; ')+')':''));
 var notes=[]; ORDER.forEach(function(s){ for(var i=0;i<TID[s].length;i++){ var e=ST(s,i); if(e&&e.note) notes.push(TOPICS[s][i]+': '+e.note); } });
 if(notes.length) L.push('Нотатки учня до тем: '+notes.slice(0,8).join(' | '));
 return L.join('\n').slice(0,9000);
@@ -302,7 +295,7 @@ UI.aiCards=''; aiRun('c',p,1500); openBox('cardBox');
 function aiMsgHTML(m,i){
 var a=m.r==='a';
 return '<div class="am '+(a?'a':'u')+'"><div class="am-t">'+esc(m.t)+'</div>'
-+(a?'<div class="am-b"><button type="button" onclick="aiCopy('+i+',this)" title="Копіювати відповідь">📋 Копіювати</button><button type="button" onclick="aiToCards('+i+')" title="Зробити картки з цієї відповіді">🃏 У картки</button></div>':'')+'</div>';
++(a?'<div class="am-b"><button type="button" onclick="aiCopy('+i+',this)" title="Копіювати відповідь">📋 Копіювати</button></div>':'')+'</div>';
 }
 function aiChatHTML(){
 aiChatInit();

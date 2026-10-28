@@ -107,11 +107,6 @@ h+='</div>';
 
 var wd=(new Date().getDay()+6)%7, subs=SCHED[wd];
 h+='<div class="card"><h3>📅 Сьогодні <span class="pill">🔥 серія: '+streak()+' дн.</span></h3>';
-// Помилки йдуть першими: прострочені важливіші за нові теми
-var ed=dueErrs();
-h+='<h4>📝 Помилки на повторення сьогодні: '+ed.length+'</h4>'+(ed.length?'':'<p class="meta">Черга порожня.</p>');
-ed.slice(0,4).forEach(function(e){ h+=errMini(e); });
-if(ed.length>4) h+='<p class="meta">…і ще '+(ed.length-4)+' · <a href="#errBox" onclick="openBox(\'errBox\');return false">відкрити журнал</a></p>';
 if(!subs.length) h+='<p class="meta">Неділя: повторення, помилки, легкий тест.</p>';
 subs.forEach(function(s){
 var nx=openTopics(s,2);
@@ -127,8 +122,6 @@ h+='<div class="rv" style="--c:'+META[o.s].color+'"><a href="#r-'+o.s+'-'+o.i+'"
 +'<button type="button" onclick="reviewTopic(\''+o.s+'\','+o.i+',0)">Забув</button></div>';
 });
 if(due.length>5) h+='<p class="meta">…і ще '+(due.length-5)+' у черзі</p>';
-var cd=cardsDueCount('');
-if(cd) h+='<h4>🃏 Картки: '+cd+' на повторення</h4><p class="meta"><a href="#cardBox" onclick="openBox(\'cardBox\');return false">Відкрити картки</a></p>';
 return h+'</div></div>';
 }
 
@@ -251,7 +244,7 @@ return h+'</details>';
 }
 function nowHTML(){
 var n=Date.now(), dl=examDl();
-var due=dueTopics(), ed=dueErrs(), eo=ed.filter(errOverdue);
+var due=dueTopics(), ed=[], eo=[];
 var wd=(new Date().getDay()+6)%7, subs=(SCHED[wd]||[]).slice(), nxt=null;
 function firstOpen(s){ var a=openTopics(s,1); return a.length?a[0]:-1; }
 for(var a=0;a<subs.length&&!nxt;a++){ var fi=firstOpen(subs[a]); if(fi>-1) nxt={s:subs[a],i:fi}; }

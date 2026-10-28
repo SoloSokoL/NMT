@@ -2,10 +2,10 @@
 // Свіжість файлів від назви кешу НЕ залежить: кожен успішний запит перезаписує кеш, а з мережі беруться актуальні файли (cache:'no-cache').
 // Назву кешу достатньо змінювати лише коли змінюється сам sw.js (список FILES, логіка) — браузер тоді ставить нову версію й чистить старі кеші.
 // Запис, якого немає у FILES (залишки видалених файлів), при активації видаляється з кешу.
-var C='nmt-v15';
+var C='nmt-v16';
 var FILES=['./','index.html','manifest.webmanifest','icon.svg',
 'icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png',
-'css/style.css','css/design.css',
+'css/style.css',
 'js/topics.js','js/weights.js','js/links.js','js/state.js','js/events.js','js/core.js','js/errors.js','js/stats.js','js/cards.js','js/sync.js','js/ai.js','js/app.js'];
 var KNOWN={};
 FILES.forEach(function(f){ KNOWN[new URL(f,self.registration.scope).pathname]=1; });
