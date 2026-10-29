@@ -10,7 +10,7 @@ var U={1:"tag-spivvidnoshennya_zvukiv_i_bukv/",2:"tag-sklad_nagolos_1/",4:"tag-z
 
 var H={1:"tag-starodavnya_istoriya_ukrayini/",2:"tag-vynyknennja_kyyivskoyi_derzhavy/",3:"tag-rozkvit_kyyivskoyi_derzhavy/",4:"tag-korolivstvo_ruske_mongolska_navala/",5:"tag-knyazivstva_u_skladi_inozemnih_derzhav_krimske_hanstvo/",6:"tag-ukrayinski_zemli_v_rechi_pospolytij_drughoyi_polovyny_khvi_st/",7:"tag-u_skladi_rechi_pospolitoyi_v_xvii_st/",8:"tag-vizvolna_vijna_ukrayinskogo_narodu_xvii_st/",9:"tag-kozacka_ukrayina_kincja_50kh_80kh_rr_khvii_st/",10:"tag-ukrayinski_zemli_kincja_khvii_pershoyi_polovyny_khviii_st/",11:"tag-ukrayinski_zemli_drughoyi_polovyny_khviii_st/",12:"tag-ukrayinski_zemli_v_rosijskij_imperiyi_kincja_khviii_pershoyi_polovyny_khikh_st/",13:"tag-ukrayinski_zemli_v_avstrijskij_imperiyi_kincja_khviii_pershoyi_polovyny_khikh_st/",14:"tag-kultura_ukrayini_xviii_xix_st/",15:"tag-ukrayinski_zemli_v_rosijskij_imperiyi_drughoyi_polovyny_khikh_st/",16:"tag-ukrayinski_zemli_v_avstroughorshhyni_drughoyi_polovyny_khikh_st/",17:"tag-ukrayinski_zemli_v_rosijskij_imperiyi_19001914_rr/",18:"tag-ukrayinski_zemli_v_avstroughorshhyni_19001914_rr/",19:"tag-ukrayina_v_roki_pershoyi_svitovoyi_vijni/",20:"tag-pochatok_ukrayinskoyi_revolyuciyi/",21:"tag-dyrektorija_unr/",22:"tag-vstanovlennja_komunistychnogho_rezhymu_v_ukrayini/",23:"tag-utverdzhennja_bilshovyckogho_rezhymu_v_ukrayini/",24:"tag-zahidnoukrayinski_zemli_v_mizhvoyennij_period/",25:"tag-pochatok_drughoyi_svitovoyi_vijny_1939_1941/",26:"tag-voyenni_diyi_na_terenakh_ukrayiny_1943_1945/",27:"tag-ukrayina_v_pershi_povoyenni_roki/",28:"tag-ukrayina_v_umovah_destalinizaciyi/",29:"tag-ukrayina_v_period_zagostrennya_krizi_radyanskoyi_sistemi/",30:"tag-vidnovlennya_nezalezhnosti_ukrayini/",31:"tag-stanovlennya_ukrayini_yak_nezalezhnoyi_derzhavi/",32:"tag-ghromadskopolitychni_ta_vijskovi_dijachi/"};
 
-var FULL={mPR:"https://zno.osvita.ua/mathematics/tema.html",uPR:"https://zno.osvita.ua/ukrmova/tema.html",hPR:"https://zno.osvita.ua/ukraine-history/tema.html",e1:"https://znogrant.com.ua/blog/gramatyka-anglijskoyi-movy-dlya-nmt-tablytsi-vsih-chasiv-z-prykladamy/",e2:"https://speakwell.ua/blog/gramatika-dlya-nmt-z-angliyskoyi-movi/",e3:"https://ispyt.com.ua/nmt/english",ePR:"https://justschool.me/en/nmt-english-tests",eVOC:"https://osvita.ua/test/training/english/55356/",eESSAY:"https://osvita.ua/test/training/english/55350/",eT1:"https://zno.osvita.ua/english/850/",eT2:"https://zno.osvita.ua/english/851/"};
+var FULL={mPR:"https://zno.osvita.ua/mathematics/tema.html",uPR:"https://zno.osvita.ua/ukrmova/tema.html",hPR:"https://zno.osvita.ua/ukraine-history/tema.html",e1:"https://znogrant.com.ua/blog/gramatyka-anglijskoyi-movy-dlya-nmt-tablytsi-vsih-chasiv-z-prykladamy/",e2:"https://speakwell.ua/blog/gramatika-dlya-nmt-z-angliyskoyi-movi/",e3:"https://ispyt.com.ua/nmt/english",ePR:"https://zno.osvita.ua/english/nmt.html",eDEMO:"https://zno.osvita.ua/english/714/",eRQ:"https://zno.osvita.ua/english/rq.html",eY25a:"https://zno.osvita.ua/english/673/",eY25b:"https://zno.osvita.ua/english/674/",eV1:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v1/",eV2:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v2/",eV3:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v3/",eV4:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v4/",eV5:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v5/",eV6:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v6/",eV7:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v7/",eV8:"https://zno.osvita.ua/multitest/tag-english_nmt_tr_v8/",eVOC:"https://osvita.ua/test/training/english/55356/",eESSAY:"https://osvita.ua/test/training/english/55350/",eT1:"https://zno.osvita.ua/english/850/",eT2:"https://zno.osvita.ua/english/851/"};
 // Fallback: пряме посилання на теоретичну статтю/тег не завжди існує для кожної вузької теми,
 // тож для тих тем, де немає перевіреної прямої сторінки, формуємо пошук відеоуроку на YouTube
 // саме за назвою теми — це завжди робоче й релевантне посилання (значок ▶️).
@@ -57,10 +57,10 @@ eng:["e3", "e1", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2
 // Для англійської кожна тема отримує власне посилання:
 // ENG_THEORY: реальна стаття (граматичні часи, лексика для власного висловлення на osvita.ua) або null —
 // тоді формується пошук відеоуроку на YouTube саме за назвою теми (значок ▶️).
-// ENG_TEST: реальний пробний тест з англійської мови на osvita.ua (значок 🔢), почергово тест №1/№2,
-// бо osvita.ua не ділить тренувальні тести з англійської на вузькі теми так, як з математики/укр. мови/історії.
+// ENG_TEST: перевірені тести з англійської мови на zno.osvita.ua (значок 🔢). Сайт не ділить англійську на вузькі теми,
+// тому тематичні рядки по черзі отримують тренувальні варіанти НМТ-2027 №1–8, діагностика — демоваріант, пробники — реальні сесії 2026.
 var ENG_THEORY=["e3", "e1", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "e2", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", "eVOC", null, null, "e3", "e3", "e3", "e3", null, null];
-var ENG_TEST=["ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "ePR", "eT1", "eT2"];
+var ENG_TEST=["eDEMO", "eV1", "eV2", "eV3", "eV4", "eV5", "eV6", "eV7", "eV8", "eV1", "eV2", "eV3", "eV4", "eV5", "eV6", "eV7", "eV8", "eV1", "eV2", "eV3", "eV4", "eV5", "eV6", "eV7", "eV8", "eV1", "eV2", "eV3", "eV4", "eV5", "eV6", "eV7", "eV8", "eT1", "eT2"];
 
 var BLOCKS = {
 math:[
@@ -217,7 +217,7 @@ if(subj==='hist'){
 return {url:ytSearch(title,"історія України"), kind:'theory'};
 }
 if(subj==='eng'){
-return {url:FULL.ePR, kind:'test'};
+return {url:linkURL(ENG_TEST[TOPICS.eng.indexOf(title)])||FULL.ePR, kind:'test'};
 }
 return {url:null, kind:'test'};
 }

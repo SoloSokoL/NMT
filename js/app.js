@@ -33,7 +33,7 @@ subjHtml+='<p class="meta" style="padding-left:0">🔢 Повні варіант
 }
 if(subj==='eng'){
 subjHtml+='<p class="meta" style="padding-left:0">Формат НМТ-2026: 32 завдання, 32 бали, 60 хв — 11 на відповідність (читання), 5 з вибором відповіді (читання), 16 на заповнення пропусків (граматика й лексика).</p>';
-subjHtml+='<p class="meta" style="padding-left:0"><a href="'+FULL.eT1+'" target="_blank" rel="noopener">🔢 Пробний тест №1 НМТ з англійської (osvita.ua)</a> · <a href="'+FULL.eT2+'" target="_blank" rel="noopener">Тест №2</a></p>';
+subjHtml+='<p class="meta" style="padding-left:0">🔢 Тести НМТ: <a href="'+FULL.ePR+'" target="_blank" rel="noopener">тренувальні 2027 (8 варіантів)</a> · '+[1,2,3,4,5,6,7,8].map(function(n){return '<a href="'+FULL['eV'+n]+'" target="_blank" rel="noopener">№'+n+'</a>';}).join(' ')+' · <a href="'+FULL.eT1+'" target="_blank" rel="noopener">НМТ 2026, 1 сесія</a> · <a href="'+FULL.eT2+'" target="_blank" rel="noopener">2 сесія</a> · <a href="'+FULL.eDEMO+'" target="_blank" rel="noopener">демо 2026</a> · <a href="'+FULL.eRQ+'" target="_blank" rel="noopener">10 випадкових завдань</a></p>';
 }
 var seq=0;
 BLOCKS[subj].forEach(function(block){
