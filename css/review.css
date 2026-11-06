@@ -1,0 +1,37 @@
+/* Центр повторення: використовує палітру й тему основного застосунку. */
+.review-center{margin-top:18px;padding:clamp(16px,3vw,28px);scroll-margin-top:24px}
+.review-heading,.review-session-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.review-heading h3{font-size:1.5rem;margin:6px 0 16px}
+.review-eyebrow{font-size:.7rem;letter-spacing:.12em;font-weight:700;color:var(--sub)}
+.review-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line,#dce1ea);padding-bottom:12px}
+.review-tabs button{flex:1;min-height:44px}
+.review-tabs [aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.review-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0}
+.review-metrics>div{border:1px solid var(--line,#dce1ea);border-radius:14px;padding:14px}
+.review-metrics b{display:block;font-size:1.8rem;font-variant-numeric:tabular-nums}
+.review-metrics span{display:block;font-size:.8rem;color:var(--sub)}
+.review-filters{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:12px;margin-bottom:14px}
+.review-filters label{display:flex;flex-direction:column;gap:6px;font-size:.8rem;color:var(--sub)}
+.review-filters input,.review-filters select{width:100%;min-width:0;min-height:44px;box-sizing:border-box}
+.review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.review-actions button,.review-session button{min-height:44px}
+.review-item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 4px;border-bottom:1px solid var(--line,#dce1ea)}
+.review-item>div:first-child{min-width:0}
+.review-subject{font-size:.75rem;color:var(--c,var(--sub));font-weight:600}
+.review-item h4{font-size:1rem;margin:6px 0;overflow-wrap:anywhere}
+.review-item .meta{padding:0;margin:4px 0}
+.review-late{color:var(--bad,#c53b3b);font-weight:600}
+.review-test{font-size:.85rem}
+.review-empty{padding:30px 16px;text-align:center;background:var(--card2);border-radius:12px}
+.review-empty p{color:var(--sub);max-width:540px;margin:12px auto}
+.review-session{max-width:780px;margin:22px auto}
+.review-session h3{font-size:clamp(1.2rem,3vw,1.65rem);line-height:1.4}
+.review-session progress{width:100%;height:8px;accent-color:#3b5bdb;margin:20px 0}
+.review-recall{background:var(--card2);padding:18px;border:1px solid var(--line,#dce1ea);border-radius:14px;margin:18px 0}
+.review-note{white-space:pre-wrap;overflow-wrap:anywhere}
+.review-center :focus-visible{outline:3px solid #748ffc;outline-offset:3px}
+.review-center button:disabled{opacity:.5;cursor:default}
+#reviewCards>#cardBox{border:0;box-shadow:none;margin:16px 0 0}
+@media(max-width:640px){.review-heading .pill{margin-bottom:14px}.review-filters{grid-template-columns:1fr 1fr}.review-filters label:last-child{grid-column:1/-1}.review-item{align-items:flex-start;flex-direction:column;gap:10px}.review-metrics{gap:6px}.review-metrics>div{padding:10px}.review-metrics b{font-size:1.5rem}.review-metrics span{font-size:.7rem}.review-tabs button{padding:10px 8px}}
+
+.review-filters input,.review-filters select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--ink)}

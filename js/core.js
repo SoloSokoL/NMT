@@ -70,14 +70,6 @@ function confBtn(subj,i,d){
 var c=confOf(d), au=pctOf(d)!==null;
 return '<button type="button" class="conf c'+c+(au?' auto':'')+'" title="'+(au?'Впевненість рахується автоматично з «тест %»: ≥80 → 🟢, 50–79 → 🟡, <50 → 🔴':'Впевненість у темі (клік змінює): 🟢 добре · 🟡 так собі · 🔴 слабо · без оцінки')+'" aria-label="Впевненість: '+['не оцінено','слабко','так собі','добре'][c]+'" onclick="cycleConf(\''+subj+'\','+i+')"></button>';
 }
-function reviewTopic(subj,i,ok){
-var cur=(STATE[subj]||{})[TID[subj][i]]; if(!cur) return;
-var n=Date.now();
-var auto=pctOf(cur)!==null; // з «тест %» впевненість змінюється лише новим результатом тесту
-if(ok){ cur.rv=(cur.rv||0)+1; if(!auto&&cur.conf===1) cur.conf=2; } else { cur.rv=0; if(!auto) cur.conf=1; }
-cur.last=n; cur.upd=n; bump(); dstat('rv');
-render(); persist();
-}
 function setExam(v){
 cfgSet('exam',v||undefined);
 render(); persist();
@@ -114,14 +106,6 @@ h+='<div class="tl" style="--c:'+META[s].color+'"><b>'+ICON[s]+' '+META[s].name+
 nx.forEach(function(i){ h+='<a href="#r-'+s+'-'+i+'">'+esc(TOPICS[s][i])+wtTag(s,i)+'</a>'; });
 h+='</div>';
 });
-var due=dueTopics();
-h+='<h4>🔁 Повторити: '+due.length+'</h4>'+(due.length?'<p class="meta">Спершу згадай тему без підглядання, потім відповідай чесно.</p>':'<p class="meta">Черга порожня.</p>');
-due.slice(0,5).forEach(function(o){
-h+='<div class="rv" style="--c:'+META[o.s].color+'"><a href="#r-'+o.s+'-'+o.i+'">'+ICON[o.s]+' '+esc(TOPICS[o.s][o.i])+'</a>'
-+'<button type="button" class="ok" onclick="reviewTopic(\''+o.s+'\','+o.i+',1)">Пам\'ятаю</button>'
-+'<button type="button" onclick="reviewTopic(\''+o.s+'\','+o.i+',0)">Забув</button></div>';
-});
-if(due.length>5) h+='<p class="meta">…і ще '+(due.length-5)+' у черзі</p>';
 return h+'</div></div>';
 }
 
