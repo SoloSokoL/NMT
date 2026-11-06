@@ -76,8 +76,8 @@ test('user notes are escaped and all delegated handlers compile',()=>{
  ctx.UI.review.tab='cards';views.push(ctx.reviewHTML());
  for(const html of views){
   const converted=ctx.hx(html);
-  assert.doesNotMatch(converted,/\\sonclick=/);
-  for(const m of converted.matchAll(/data-on-\\w+="([^"]*)"/g))ctx.hxCompile(m[1]);
+  assert.doesNotMatch(converted,/\sonclick=/);
+  for(const m of converted.matchAll(/data-on-\w+="([^"]*)"/g))ctx.hxCompile(m[1]);
  }
 });
 test('full app integrates review and original progress views',()=>{
