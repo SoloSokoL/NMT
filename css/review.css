@@ -1,37 +1,110 @@
-/* Центр повторення: використовує палітру й тему основного застосунку. */
-.review-center{margin-top:18px;padding:clamp(16px,3vw,28px);scroll-margin-top:24px}
+/* Центр повторення: використовує палітру й тему основного застосунку (світла/темна). */
+.review-center{--rv-acc:#3b5bdb;--rv-ok:#2f9e44;--rv-bad:var(--bad,#e03131);--rv-r:14px;
+margin-top:18px;padding:clamp(16px,3vw,28px);scroll-margin-top:24px;border-radius:calc(var(--r,16px) + 2px);
+background:linear-gradient(180deg,color-mix(in srgb,var(--rv-acc) 7%,var(--card2)) 0,var(--card2) 190px)}
+
+/* --- заголовок --- */
 .review-heading,.review-session-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.review-heading h3{font-size:1.5rem;margin:6px 0 16px}
-.review-eyebrow{font-size:.7rem;letter-spacing:.12em;font-weight:700;color:var(--sub)}
-.review-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line,#dce1ea);padding-bottom:12px}
-.review-tabs button{flex:1;min-height:44px}
-.review-tabs [aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
-.review-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0}
-.review-metrics>div{border:1px solid var(--line,#dce1ea);border-radius:14px;padding:14px}
-.review-metrics b{display:block;font-size:1.8rem;font-variant-numeric:tabular-nums}
-.review-metrics span{display:block;font-size:.8rem;color:var(--sub)}
-.review-filters{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:12px;margin-bottom:14px}
-.review-filters label{display:flex;flex-direction:column;gap:6px;font-size:.8rem;color:var(--sub)}
-.review-filters input,.review-filters select{width:100%;min-width:0;min-height:44px;box-sizing:border-box}
+.review-heading h3{font-size:1.6rem;line-height:1.15;margin:6px 0 18px;letter-spacing:-.02em}
+.review-eyebrow{font-size:.68rem;letter-spacing:.14em;font-weight:700;color:var(--rv-acc);text-transform:uppercase}
+.review-heading .pill{background:color-mix(in srgb,var(--rv-acc) 12%,var(--card2));color:var(--rv-acc);font-weight:650;font-size:.74rem;padding:5px 12px;border:1px solid color-mix(in srgb,var(--rv-acc) 22%,transparent)}
+
+/* --- вкладки: сегментований перемикач --- */
+.review-tabs{display:flex;gap:4px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.review-center .review-tabs button{flex:1;min-height:42px;border:0;border-radius:10px;background:transparent;color:var(--sub);font-size:.86rem;font-weight:650;box-shadow:none;transition:background .18s var(--ease,ease),color .18s,box-shadow .18s}
+.review-center .review-tabs button:hover{color:var(--ink)}
+.review-center .review-tabs [aria-selected="true"]{background:var(--card2);color:var(--rv-acc);box-shadow:var(--shadow-sm),inset 0 -2px 0 var(--rv-acc)}
+
+/* --- показники --- */
+.review-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.review-metrics>div{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:var(--rv-r);padding:14px 14px 12px;background:var(--card2);box-shadow:var(--shadow-sm)}
+.review-metrics>div::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--rv-acc)}
+.review-metrics>div:nth-child(2)::before{background:var(--rv-bad)}
+.review-metrics>div:nth-child(3)::before{background:var(--rv-ok)}
+.review-metrics b{display:block;font-size:1.9rem;line-height:1.1;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--rv-acc)}
+.review-metrics>div:nth-child(2) b{color:var(--rv-bad)}
+.review-metrics>div:nth-child(3) b{color:var(--rv-ok)}
+.review-metrics span{display:block;font-size:.78rem;color:var(--sub);margin-top:4px}
+
+/* --- фільтри --- */
+.review-filters{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:12px;margin-bottom:16px;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--rv-r)}
+.review-filters label{display:flex;flex-direction:column;gap:6px;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)}
+.review-filters input,.review-filters select{width:100%;min-width:0;min-height:44px;box-sizing:border-box;font:inherit;font-size:.9rem;font-weight:500;letter-spacing:0;text-transform:none;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card2);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.review-filters input:hover,.review-filters select:hover{border-color:color-mix(in srgb,var(--rv-acc) 45%,var(--line))}
+.review-filters input:focus,.review-filters select:focus{outline:none;border-color:var(--rv-acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--rv-acc) 22%,transparent)}
+.review-center>div>.meta{font-size:.78rem;line-height:1.5;padding:0 2px;margin:0 0 16px}
+
+/* --- кнопки --- */
 .review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
 .review-actions button,.review-session button{min-height:44px}
-.review-item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 4px;border-bottom:1px solid var(--line,#dce1ea)}
-.review-item>div:first-child{min-width:0}
-.review-subject{font-size:.75rem;color:var(--c,var(--sub));font-weight:600}
-.review-item h4{font-size:1rem;margin:6px 0;overflow-wrap:anywhere}
-.review-item .meta{padding:0;margin:4px 0}
-.review-late{color:var(--bad,#c53b3b);font-weight:600}
-.review-test{font-size:.85rem}
-.review-empty{padding:30px 16px;text-align:center;background:var(--card2);border-radius:12px}
-.review-empty p{color:var(--sub);max-width:540px;margin:12px auto}
-.review-session{max-width:780px;margin:22px auto}
-.review-session h3{font-size:clamp(1.2rem,3vw,1.65rem);line-height:1.4}
-.review-session progress{width:100%;height:8px;accent-color:#3b5bdb;margin:20px 0}
-.review-recall{background:var(--card2);padding:18px;border:1px solid var(--line,#dce1ea);border-radius:14px;margin:18px 0}
-.review-note{white-space:pre-wrap;overflow-wrap:anywhere}
-.review-center :focus-visible{outline:3px solid #748ffc;outline-offset:3px}
-.review-center button:disabled{opacity:.5;cursor:default}
-#reviewCards>#cardBox{border:0;box-shadow:none;margin:16px 0 0}
-@media(max-width:640px){.review-heading .pill{margin-bottom:14px}.review-filters{grid-template-columns:1fr 1fr}.review-filters label:last-child{grid-column:1/-1}.review-item{align-items:flex-start;flex-direction:column;gap:10px}.review-metrics{gap:6px}.review-metrics>div{padding:10px}.review-metrics b{font-size:1.5rem}.review-metrics span{font-size:.7rem}.review-tabs button{padding:10px 8px}}
+.review-center button{border:1px solid var(--line);border-radius:10px;padding:8px 16px;font-size:.84rem;font-weight:650;background:var(--card2);color:var(--ink);cursor:pointer;transition:transform .12s var(--ease,ease),border-color .15s,background .15s,filter .15s,box-shadow .15s}
+.review-center button:hover:not(:disabled){border-color:var(--rv-acc);color:var(--rv-acc)}
+.review-center button:active:not(:disabled){transform:scale(.97)}
+.review-center button.ok{background:var(--rv-acc);border-color:var(--rv-acc);color:#fff;box-shadow:0 6px 16px -8px var(--rv-acc)}
+.review-center button.ok:hover:not(:disabled){background:var(--rv-acc);color:#fff;filter:brightness(1.1)}
+.review-center button:disabled{opacity:.5;cursor:default;box-shadow:none}
+#reviewList>.review-actions{margin-bottom:6px}
+#reviewList>.review-actions+.meta{margin:8px 2px 14px;font-weight:600;color:var(--sub)}
+#reviewList>button{display:block;width:100%;margin-top:6px}
 
-.review-filters input,.review-filters select{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--ink)}
+/* --- список тем --- */
+#reviewList{display:flex;flex-direction:column;gap:10px}
+#reviewList>.meta,#reviewList>.review-actions,#reviewList>.review-empty{margin-left:0;margin-right:0}
+.review-item{position:relative;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 16px 14px 20px;border:1px solid var(--line);border-radius:var(--rv-r);background:var(--card2);box-shadow:var(--shadow-sm);overflow:hidden;transition:transform .18s var(--ease,ease),box-shadow .18s,border-color .18s;animation:rvIn .28s var(--ease,ease) both}
+.review-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c,var(--rv-acc))}
+@media(hover:hover){.review-item:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--c,var(--rv-acc)) 40%,var(--line))}}
+@keyframes rvIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.review-item>div:first-child{min-width:0}
+.review-subject{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;color:var(--c,var(--sub));font-weight:700;letter-spacing:.02em}
+.review-item h4{font-size:1rem;font-weight:650;line-height:1.35;margin:5px 0 6px;overflow-wrap:anywhere;text-transform:none;letter-spacing:0;color:var(--ink)}
+.review-item h4 a{color:inherit;text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 1.5px no-repeat;transition:background-size .2s var(--ease,ease)}
+.review-item h4 a:hover{background-size:100% 1.5px}
+.review-item .meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:0;margin:4px 0 0;font-size:.76rem;color:var(--sub)}
+.review-late{display:inline-block;color:var(--rv-bad);background:color-mix(in srgb,var(--rv-bad) 12%,transparent);border-radius:999px;padding:1px 9px;font-weight:650}
+.review-item .review-actions{flex-shrink:0}
+.review-test{display:inline-flex;align-items:center;min-height:40px;box-sizing:border-box;padding:0 14px;font-size:.82rem;font-weight:650;color:var(--rv-acc);text-decoration:none;border:1px solid color-mix(in srgb,var(--rv-acc) 35%,var(--line));border-radius:10px;transition:background .15s,border-color .15s}
+.review-test:hover{background:color-mix(in srgb,var(--rv-acc) 10%,transparent);border-color:var(--rv-acc)}
+.review-empty{padding:34px 18px;text-align:center;background:var(--card);border:1.5px dashed var(--line);border-radius:var(--rv-r)}
+.review-empty b{font-size:1rem}
+.review-empty p{color:var(--sub);max-width:540px;margin:10px auto 0;line-height:1.55}
+
+/* --- сесія повторення --- */
+.review-session{max-width:780px;margin:22px auto;padding:clamp(16px,3vw,26px);background:var(--card2);border:1px solid var(--line);border-radius:calc(var(--rv-r) + 4px);box-shadow:var(--shadow-sm);animation:rvIn .28s var(--ease,ease) both}
+.review-session h3{font-size:clamp(1.25rem,3vw,1.7rem);line-height:1.35;letter-spacing:-.015em;margin:6px 0 12px}
+.review-session>p{line-height:1.6;color:var(--sub)}
+.review-session .review-subject{font-size:.8rem;margin:0}
+.review-session progress{display:block;width:100%;height:10px;margin:18px 0 20px;border:0;border-radius:99px;overflow:hidden;background:var(--card);accent-color:var(--rv-acc);-webkit-appearance:none;appearance:none}
+.review-session progress::-webkit-progress-bar{background:var(--card);border-radius:99px}
+.review-session progress::-webkit-progress-value{background:linear-gradient(90deg,var(--rv-acc),#7048e8);border-radius:99px;transition:width .3s var(--ease,ease)}
+.review-session progress::-moz-progress-bar{background:linear-gradient(90deg,var(--rv-acc),#7048e8);border-radius:99px}
+.review-recall{background:color-mix(in srgb,var(--rv-acc) 6%,var(--card));padding:16px 18px;border:1px solid var(--line);border-left:4px solid var(--rv-acc);border-radius:var(--rv-r);margin:18px 0;animation:rvIn .24s var(--ease,ease) both}
+.review-recall>b{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--rv-acc)}
+.review-recall a{display:inline-block;margin:2px 14px 2px 0;font-weight:650;color:var(--rv-acc);text-decoration:none}
+.review-recall a:hover{text-decoration:underline}
+.review-note{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;color:var(--ink)}
+.review-session>button.ok{width:100%;min-height:50px;font-size:.95rem}
+.review-session .review-actions{margin-top:4px}
+.review-session .review-actions button{flex:1 1 180px;min-height:50px;font-size:.92rem}
+.review-session .review-actions button:not(.ok){background:var(--card)}
+.review-session-top button{min-height:38px;padding:6px 12px;font-size:.78rem;color:var(--sub)}
+.review-session[role="status"]{text-align:center}
+.review-session[role="status"] h3{font-size:1.7rem}
+
+/* --- доступність --- */
+.review-center :focus-visible{outline:3px solid #748ffc;outline-offset:3px}
+#reviewCards>#cardBox{border:0;box-shadow:none;margin:16px 0 0;background:transparent;padding:0}
+
+/* --- телефон --- */
+@media(max-width:640px){
+.review-heading .pill{margin-bottom:14px}
+.review-filters{grid-template-columns:1fr 1fr;padding:12px}
+.review-filters label:last-child{grid-column:1/-1}
+.review-item{align-items:flex-start;flex-direction:column;gap:12px;padding:14px 14px 14px 18px}
+.review-item .review-actions{width:100%}
+.review-item .review-actions>*{flex:1 1 0;justify-content:center;text-align:center}
+.review-metrics{gap:8px}
+.review-metrics>div{padding:12px 10px 10px}
+.review-metrics b{font-size:1.55rem}
+.review-metrics span{font-size:.7rem}
+.review-center .review-tabs button{padding:10px 8px;font-size:.82rem}
+}
